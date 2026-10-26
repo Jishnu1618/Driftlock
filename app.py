@@ -202,9 +202,7 @@ def get_demo_repo_dir(force_new: bool = False) -> Path:
         temp_dir = tempfile.mkdtemp(prefix="driftlock_demo_")
         fixtures_path = Path("fixtures/demo_repo")
         if fixtures_path.exists():
-            for item in fixtures_path.iterdir():
-                if item.is_file():
-                    shutil.copy2(item, Path(temp_dir) / item.name)
+            shutil.copytree(fixtures_path, temp_dir, dirs_exist_ok=True)
         st.session_state.temp_repo_dir = temp_dir
     return Path(st.session_state.temp_repo_dir)
 
@@ -312,7 +310,8 @@ if "PR #42" in scenario:
     drift_report = compute_contract_diff(base_contract, head_contract)
 
     # 3. Scan Blast Radius
-    blast_result = BlastRadiusMapper.scan_blast_radius(drift_report, demo_dir)
+    mapper = BlastRadiusMapper(demo_dir)
+    blast_result = mapper.scan_blast_radius(drift_report)
 
     is_remediated = st.session_state.remediated and blast_result.total_impacted_files == 0
 

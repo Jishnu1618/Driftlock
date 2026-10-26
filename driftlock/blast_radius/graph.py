@@ -75,29 +75,55 @@ class BlastRadiusResult:
 class BlastRadiusMapper:
     """Scans a repository for stale references to drifted contracts."""
 
-    def __init__(self, repo_root: str):
+    def __init__(self, repo_root: str | Path):
         self.repo_root = Path(repo_root)
         if not self.repo_root.is_dir():
             raise FileNotFoundError(f"Repository root not found: {repo_root}")
 
-    def scan_blast_radius(self, drift_report: DriftReport) -> BlastRadiusResult:
-        """Walk the repo and find files impacted by each drift."""
-        result = BlastRadiusResult(drift_report=drift_report)
+    @classmethod
+    def scan(cls, drift_report: DriftReport, repo_root: str | Path = ".") -> BlastRadiusResult:
+        """Convenience method to scan without explicit instantiation."""
+        return cls(repo_root).scan_blast_radius(drift_report)
 
-        if not drift_report.has_drift:
+    def scan_blast_radius(
+        self_or_report: Any,
+        drift_report_or_root: Any = None,
+    ) -> BlastRadiusResult:
+        """Walk the repo and find files impacted by each drift.
+
+        Supports both:
+          mapper = BlastRadiusMapper(repo_root)
+          mapper.scan_blast_radius(drift_report)
+        And:
+          BlastRadiusMapper.scan_blast_radius(drift_report, repo_root)
+        """
+        if isinstance(self_or_report, BlastRadiusMapper):
+            mapper = self_or_report
+            report = drift_report_or_root
+        elif isinstance(self_or_report, DriftReport):
+            report = self_or_report
+            repo_root = drift_report_or_root or "."
+            mapper = BlastRadiusMapper(repo_root)
+        else:
+            mapper = BlastRadiusMapper(drift_report_or_root or ".")
+            report = self_or_report
+
+        result = BlastRadiusResult(drift_report=report)
+
+        if not report.has_drift:
             return result
 
         # Collect all scannable files
-        file_entries = self._collect_files()
+        file_entries = mapper._collect_files()
 
         # For each drift, check relevant files
-        for drift in drift_report.drifts:
-            schema_name, field_name = self._parse_drift_identifiers(drift)
+        for drift in report.drifts:
+            schema_name, field_name = mapper._parse_drift_identifiers(drift)
             if not schema_name:
                 continue
 
             for fpath, ftype in file_entries:
-                self._check_file(fpath, ftype, drift, schema_name, field_name, result)
+                mapper._check_file(fpath, ftype, drift, schema_name, field_name, result)
 
         return result
 
