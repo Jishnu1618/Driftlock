@@ -1,0 +1,19 @@
+{
+  "packages": {
+    "apt": [
+      "python3-venv",
+      "python3-pip"
+    ]
+  },
+  "env": {
+    "CI": "1",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "secrets": {},
+  "install": [
+    {
+      "name": "setup",
+      "run": "bash .alan/setup.sh"
+    }
+  ]
+}
