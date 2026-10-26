@@ -18,12 +18,12 @@ if [ ! -x "$REPO_DIR/.venv/bin/python" ]; then
   # The image build normally provides .venv; recreate it if it is missing.
   python3 -m venv .venv
   .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
-  .venv/bin/python -m pip install --disable-pip-version-check -e .
 fi
 
 {
   echo "--- driftlock session start $(date -Is) ---"
   "$REPO_DIR/.venv/bin/python" -c "import driftlock; print('driftlock', driftlock.__version__)"
+  "$REPO_DIR/.venv/bin/python" -m driftlock.cli.main --help >/dev/null && echo "cli: ok"
   echo "interpreter: $REPO_DIR/.venv/bin/python"
   echo "repo: $REPO_DIR"
 } >>"$LOG_FILE" 2>&1
