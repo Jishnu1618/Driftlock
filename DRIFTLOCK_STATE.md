@@ -32,3 +32,12 @@
   - Attribute docstring and function docstring fallback extraction.
   - Multi-decorator / stacked route handling.
   - Full test suite in [`tests/test_parser.py`](file:///e:/driftlock/tests/test_parser.py) with 100% pass rate.
+
+  | Phase | Description | Deliverable | Status |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | AST Contract Parser & Fixtures | Deterministic route/schema extraction (Zero LLM) | 🟢 COMPLETED (8/8 passed) |
+| **Phase 2** | Blast Radius Dependency Graph | Map AST diffs to tests, docs, and `AGENT_CONTEXT.md` | 🟡 IN PROGRESS |
+| **Phase 3** | Alan AI / Open Model Remediation | Generate synchronization patches across stale files | ⚪ PENDING |
+| **Phase 4** | CLI & Terminal Visualizer | Rich tree/table output showing blast radius red -> green | ⚪ PENDING |
+| **Phase 5** | Git Ops & Automated PR | Auto-branch, commit patches, and create GitHub PR | ⚪ PENDING |
+| **Phase 6** | Demo Video, README & Packaging | 90s screen recording, visual README, X launch post | ⚪ PENDING |ukouk
