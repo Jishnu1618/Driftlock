@@ -71,6 +71,35 @@ class BlastRadiusResult:
     def impacted_agent_memory(self) -> list[ImpactedArtifact]:
         return [a for a in self.impacted_artifacts if a.artifact_type == "AGENT_MEMORY"]
 
+    def format_remediation_brief(self) -> str:
+        """Format a structured remediation brief for an AI coding agent."""
+        report = self.drift_report
+        lines = []
+        lines.append("# DriftLock Remediation Brief")
+        lines.append("")
+        lines.append("## Contract Drifts Detected")
+        for i, d in enumerate(report.drifts, 1):
+            severity = "BREAKING" if d.is_breaking else "NON-BREAKING"
+            lines.append(f"{i}. [{severity}] {d.category}: {d.identifier}")
+            lines.append(f"   Detail: {d.details}")
+        lines.append("")
+
+        if self.impacted_artifacts:
+            lines.append("## Stale Files Requiring Update")
+            for artifact in self.impacted_artifacts:
+                lines.append(f"- [{artifact.artifact_type}] {artifact.file_path}")
+                lines.append(f"  - Reason: {artifact.reason}")
+                lines.append(f"  - Action: {artifact.suggested_action}")
+            lines.append("")
+
+        lines.append("## Instructions for AI Agent")
+        lines.append("1. Read each stale file listed above.")
+        lines.append("2. Apply the suggested action to synchronize the file with the new contract.")
+        lines.append("3. Run the test suite to verify no regressions.")
+        lines.append("4. Commit the synchronized files.")
+
+        return "\n".join(lines)
+
 
 class BlastRadiusMapper:
     """Scans a repository for stale references to drifted contracts."""

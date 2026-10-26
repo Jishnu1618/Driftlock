@@ -4,10 +4,10 @@
 *Deterministically synchronizing API contracts, tests, documentation, and AI agent memory.*
 
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-35%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-40%20passed-brightgreen.svg)](tests/)
 [![Analysis](https://img.shields.io/badge/AST%20Parser-Zero--LLM%20Deterministic-orange.svg)](#core-engine)
 [![Frameworks](https://img.shields.io/badge/supports-FastAPI%20%7C%20Flask%20%7C%20Pydantic%20v1%2Fv2-purple.svg)](#supported-frameworks)
-[![UI](https://img.shields.io/badge/Dashboard-Streamlit%20Dark-ff4b4b.svg)](#-interactive-web-dashboard)
+[![UI](https://img.shields.io/badge/Control%20Plane-Tailwind%20%2B%20FastAPI-6366f1.svg)](#-web-control-plane--fastapi-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -169,18 +169,20 @@ Options:
 Launch the interactive dark-themed web dashboard for live demos and hackathon judging:
 
 ```bash
+# Launch FastAPI Backend Server + Precision Web Control Plane:
+uvicorn driftlock.api.server:app --reload
+
+# Or launch the Streamlit dashboard:
 streamlit run app.py
 ```
 
-### Dashboard Features:
-1. **Scenario Selector**:
-   - `PR #42: UserCreate Schema Expansion` (preloaded scenario from `fixtures/demo_repo`)
-   - `Live Contract Playground` (interactive side-by-side Python code editor for custom contracts)
-2. **Metric Cards**: Real-time counter of Breaking Changes, Non-Breaking Changes, Stale Tests, Stale Docs, and Stale Agent Memory.
-3. **Side-by-Side AST Diff**: Deep structural comparison of schemas, fields, routes, and decorators.
-4. **Blast Radius Breakdown**: Visual inspection of downstream dependencies and risk ratings.
-5. **Alan AI Brief**: Instant generation of structured remediation prompts for AI agents.
-6. **⚡ 1-Click Auto-Remediation**: Executes `DriftRemediator`, renders syntax-highlighted unified Git diffs, and flips status from `DRIFT DETECTED` to `✓ ALL CONTRACTS IN SYNC`.
+### Web Control Plane Features:
+1. **Top Command Header**: Live Status Banner Pill with dynamic state transition (`DRIFT DETECTED` ➔ `REPOSITORY SYNCHRONIZED`), Alan AI skill badge, and instant remediation triggers.
+2. **KPI Bento Row**: Real-time counter of Breaking Changes, Non-Breaking Changes, Blast Radius Impact, and Verification Gate (`CI / PR BLOCKED` ➔ `READY TO MERGE`).
+3. **Interactive Blast Radius Dependency Graph**: Visual tree cascading from source contracts (`api_base.py → api_head.py`) into `[TEST]`, `[DOCS]`, and `[AGENT_MEMORY]`.
+4. **Unified Git Patches**: High-density syntax-highlighted diff viewer (`difflib`) showing exact additions and deletions.
+5. **Alan Agent Remediation Brief**: One-click prompt exporter for AI coding agents.
+6. **Live AST Sandbox**: Real-time interactive playground to test arbitrary Python contracts against the AST engine via `POST /api/custom-audit`.
 
 ---
 
