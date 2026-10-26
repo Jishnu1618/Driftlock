@@ -7,9 +7,12 @@ Commands:
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -31,6 +34,7 @@ import typer
 from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
@@ -220,6 +224,30 @@ def _render_json(result: BlastRadiusResult) -> None:
     console.print_json(json.dumps(output, indent=2))
 
 
+def _render_unified_diff(patch) -> None:
+    """Render a unified diff panel for a single remediation patch."""
+    from driftlock.sync.remediator import RemediationPatch
+
+    fname = Path(patch.file_path).name
+    diff_lines = list(difflib.unified_diff(
+        patch.original_content.splitlines(keepends=True),
+        patch.patched_content.splitlines(keepends=True),
+        fromfile=f"a/{fname}",
+        tofile=f"b/{fname}",
+        lineterm="",
+    ))
+
+    if diff_lines:
+        diff_text = "\n".join(diff_lines)
+        console.print(Panel(
+            Syntax(diff_text, "diff", theme="monokai", line_numbers=False),
+            title=f"[bold yellow]Patch: {escape(fname)}[/bold yellow]",
+            border_style="yellow",
+            padding=(0, 1),
+        ))
+    console.print()
+
+
 # ---------------------------------------------------------------------------
 # CLI Commands
 # ---------------------------------------------------------------------------
@@ -231,6 +259,7 @@ def audit(
     head: str = typer.Option(..., "--head", "-H", help="Path to the head (new) Python contract file."),
     repo: str = typer.Option(".", "--repo", "-r", help="Repository root directory to scan for blast radius."),
     output_json: bool = typer.Option(False, "--json", "-j", help="Output results as structured JSON."),
+    fix: bool = typer.Option(False, "--fix", "-f", help="Auto-remediate stale files and verify sync."),
 ) -> None:
     """Compare base and head contract files, compute drift, and scan blast radius."""
     base_path = Path(base)
@@ -269,9 +298,15 @@ def audit(
     else:
         _render_drift_tree(result)
 
+    # --fix: auto-remediate
+    if fix and result.impacted_artifacts:
+        _run_fix(result, head_contract, repo_path)
+
 
 @app.command()
-def demo() -> None:
+def demo(
+    fix: bool = typer.Option(False, "--fix", "-f", help="Auto-remediate stale files and verify sync."),
+) -> None:
     """Run a built-in demo audit against fixtures/demo_repo/ with zero arguments."""
     # Locate the demo fixtures relative to the project root
     cli_dir = Path(__file__).resolve().parent
@@ -309,11 +344,136 @@ def demo() -> None:
     # Compute diff
     drift_report = compute_contract_diff(base_contract, head_contract)
 
-    # Scan blast radius within the demo repo
-    mapper = BlastRadiusMapper(str(demo_dir))
-    result = mapper.scan_blast_radius(drift_report)
+    if fix:
+        # --fix mode: work on a temporary copy so fixtures/ is NEVER mutated
+        _run_demo_fix(demo_dir, base_contract, head_contract, drift_report)
+    else:
+        # Normal demo: scan blast radius within the demo repo
+        mapper = BlastRadiusMapper(str(demo_dir))
+        result = mapper.scan_blast_radius(drift_report)
+        _render_drift_tree(result)
 
-    _render_drift_tree(result)
+
+# ---------------------------------------------------------------------------
+# --fix implementation
+# ---------------------------------------------------------------------------
+
+
+def _run_fix(
+    result: BlastRadiusResult,
+    head_contract,
+    repo_path: Path,
+) -> None:
+    """Execute auto-remediation on the actual repo (for ``audit --fix``)."""
+    from driftlock.sync.remediator import DriftRemediator
+
+    console.print()
+    console.print("[bold blue]Running DriftLock Auto-Remediation...[/bold blue]")
+    console.print()
+
+    remediator = DriftRemediator(use_api=None)
+    rem_result = remediator.remediate(result, head_contract)
+
+    if rem_result.files_patched == 0:
+        console.print("[yellow]No patches could be generated.[/yellow]")
+        return
+
+    # Show diffs
+    for patch in rem_result.patches:
+        _render_unified_diff(patch)
+
+    # Apply patches
+    written = remediator.apply_patches(rem_result)
+    console.print(f"[dim]Wrote {written} patched file(s) to disk.[/dim]")
+
+    # Re-scan to verify
+    mapper = BlastRadiusMapper(str(repo_path.resolve()))
+    new_result = mapper.scan_blast_radius(result.drift_report)
+    remaining = new_result.total_impacted_files
+
+    console.print()
+    if remaining == 0:
+        total = rem_result.files_patched
+        console.print(Panel(
+            f"[bold green]REPOSITORY SYNCHRONIZED -- "
+            f"0 Stale Artifacts Remaining ({total}/{total} Fixed)[/bold green]",
+            border_style="green",
+            padding=(1, 2),
+        ))
+    else:
+        console.print(Panel(
+            f"[bold yellow]Partial Remediation -- "
+            f"{remaining} Stale Artifact(s) Remaining[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2),
+        ))
+
+
+def _run_demo_fix(
+    demo_dir: Path,
+    base_contract,
+    head_contract,
+    drift_report: DriftReport,
+) -> None:
+    """Run --fix on a temp copy of fixtures/demo_repo/ to never mutate originals."""
+    from driftlock.sync.remediator import DriftRemediator
+
+    with tempfile.TemporaryDirectory(prefix="driftlock_demo_") as tmp:
+        tmp_dir = Path(tmp) / "demo_repo"
+        shutil.copytree(str(demo_dir), str(tmp_dir))
+
+        # Step 1: Initial blast radius scan on temp copy
+        mapper = BlastRadiusMapper(str(tmp_dir))
+        initial_result = mapper.scan_blast_radius(drift_report)
+
+        console.print("[bold red]--- BEFORE Remediation ---[/bold red]")
+        console.print()
+        _render_drift_tree(initial_result)
+
+        # Step 2: Run remediator
+        console.print()
+        console.print("[bold blue]Running DriftLock Auto-Remediation...[/bold blue]")
+        console.print()
+
+        remediator = DriftRemediator(use_api=False)  # Always offline for demo
+        rem_result = remediator.remediate(initial_result, head_contract)
+
+        if rem_result.files_patched == 0:
+            console.print("[yellow]No patches could be generated.[/yellow]")
+            return
+
+        # Step 3: Show unified diffs
+        for patch in rem_result.patches:
+            _render_unified_diff(patch)
+
+        # Step 4: Write patches to temp dir
+        written = remediator.apply_patches(rem_result)
+        console.print(f"[dim]Applied {written} patch(es) to temporary workspace.[/dim]")
+        console.print()
+
+        # Step 5: Re-scan to verify synchronization
+        post_mapper = BlastRadiusMapper(str(tmp_dir))
+        post_result = post_mapper.scan_blast_radius(drift_report)
+        remaining = post_result.total_impacted_files
+
+        console.print("[bold green]--- AFTER Remediation ---[/bold green]")
+        console.print()
+
+        if remaining == 0:
+            total = rem_result.files_patched
+            console.print(Panel(
+                f"[bold green]REPOSITORY SYNCHRONIZED -- "
+                f"0 Stale Artifacts Remaining ({total}/{total} Fixed)[/bold green]",
+                border_style="green",
+                padding=(1, 2),
+            ))
+        else:
+            console.print(Panel(
+                f"[bold yellow]Partial Remediation -- "
+                f"{remaining} Stale Artifact(s) Remaining[/bold yellow]",
+                border_style="yellow",
+                padding=(1, 2),
+            ))
 
 
 def main() -> None:

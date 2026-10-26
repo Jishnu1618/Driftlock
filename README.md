@@ -4,9 +4,10 @@
 *Deterministically synchronizing API contracts, tests, documentation, and AI agent memory.*
 
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-27%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-35%20passed-brightgreen.svg)](tests/)
 [![Analysis](https://img.shields.io/badge/AST%20Parser-Zero--LLM%20Deterministic-orange.svg)](#core-engine)
 [![Frameworks](https://img.shields.io/badge/supports-FastAPI%20%7C%20Flask%20%7C%20Pydantic%20v1%2Fv2-purple.svg)](#supported-frameworks)
+[![UI](https://img.shields.io/badge/Dashboard-Streamlit%20Dark-ff4b4b.svg)](#-interactive-web-dashboard)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -30,7 +31,9 @@ Modern software development moves at breakneck speed. When human developers or A
 - **Contract Diffing Engine**: Compares base and head contracts, classifying changes into breaking vs. non-breaking drifts (`FIELD_ADDED`, `FIELD_REMOVED`, `FIELD_TYPE_CHANGED`, `ROUTE_ADDED`, `ROUTE_REMOVED`).
 - **Blast Radius Mapper**: Traverses the repository to detect impacted files across **Tests**, **Documentation**, and **Agent Memory** (`AGENT_CONTEXT.md`).
 - **Remediation Brief Synthesis**: Automatically generates structured action briefs with precise instructions for AI agents (e.g. Alan AI, Claude, Qwen) or developers to repair stale references.
-- **Interactive Rich Visualizer**: Renders beautiful terminal trees, tables, and CI-ready JSON outputs.
+- **⚡ Closed-Loop Remediation Engine (`--fix`)**: Automatically patches impacted test files, markdown documentation tables, and agent context instructions, then performs an immediate re-audit to verify 0 stale artifacts remain.
+- **🌐 Interactive Web Dashboard (`app.py`)**: A modern dark-themed Streamlit dashboard with side-by-side AST comparisons, live contract playground, and 1-click self-healing.
+- **🤖 Alan AI Native Skill (`/driftlock`)**: Integrated skill specification in `.alan/skills/driftlock.md` and root `SKILL.md` enabling coding agents to audit and remediate repositories autonomously.
 
 ---
 
@@ -47,14 +50,16 @@ flowchart TD
         ASTParser["Deterministic AST Parser\n(Zero-LLM, Native ast)"]
         DiffEngine["Contract Diff Engine\n(Breaking vs Non-Breaking)"]
         BlastMapper["Blast Radius Mapper\n(Repo Dependency Graph)"]
-        Remediation["Remediation Brief Generator\n(Actionable AI Prompts)"]
+        Remediator["Closed-Loop Remediator\n(Deterministic + Open Model API)"]
     end
 
-    subgraph Output ["Impact & Remediation"]
+    subgraph Output ["Impact & Self-Healing"]
         Tests["🧪 Tests (test_*.py)"]
         Docs["📖 Docs (*.md)"]
         AgentContext["🤖 Agent Memory (AGENT_CONTEXT.md)"]
-        CLI["💻 Rich Terminal UI / JSON"]
+        CLI["💻 Rich Terminal UI / JSON / --fix"]
+        WebUI["🌐 Streamlit Dashboard (app.py)"]
+        AlanSkill["🤖 Alan AI Skill (/driftlock)"]
     end
 
     Base --> ASTParser
@@ -64,10 +69,15 @@ flowchart TD
     BlastMapper --> Tests
     BlastMapper --> Docs
     BlastMapper --> AgentContext
-    BlastMapper --> Remediation
+    BlastMapper --> Remediator
+    Remediator --> Tests
+    Remediator --> Docs
+    Remediator --> AgentContext
     DiffEngine --> CLI
     BlastMapper --> CLI
-    Remediation --> CLI
+    Remediator --> CLI
+    Remediator --> WebUI
+    Remediator --> AlanSkill
 ```
 
 ---
@@ -96,6 +106,7 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+pip install streamlit
 ```
 
 ### 3. Run the Test Suite
@@ -104,13 +115,16 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-All 27 deterministic unit and integration tests will execute in ~1 second.
+All 35 deterministic unit and integration tests will execute cleanly:
+- 8 parser unit tests
+- 19 diff, blast radius, and CLI tests
+- 8 remediation and closed-loop verification tests
 
 ---
 
 ## 💻 CLI Usage
 
-DriftLock provides a Typer-powered CLI with Rich terminal formatting and machine-readable JSON exports.
+DriftLock provides a Typer-powered CLI with Rich terminal formatting, machine-readable JSON exports, and self-healing.
 
 ### Run End-to-End Demo
 
@@ -120,11 +134,20 @@ Experience DriftLock's full audit lifecycle on the included demonstration fixtur
 python -m driftlock.cli.main demo
 ```
 
-To output the raw structured JSON payload (ideal for CI/CD pipelines):
+### Run Closed-Loop Self-Healing (`--fix`)
+
+Detect drift, patch impacted files, and verify zero stale artifacts remain:
 
 ```bash
-python -m driftlock.cli.main demo --json
+python -m driftlock.cli.main demo --fix
 ```
+
+When run with `--fix`:
+1. Isolated copy of `fixtures/demo_repo` is created in a temporary directory (original fixtures are never mutated).
+2. Initial audit executes and displays the `X DRIFT DETECTED` output and Blast Radius tree.
+3. `DriftRemediator` patches `test_users.py`, `README.md`, and `AGENT_CONTEXT.md`.
+4. Unified Git diff panels are rendered showing exact lines added.
+5. Re-scan confirms: `✓ REPOSITORY SYNCHRONIZED — 0 Stale Artifacts Remaining (3/3 Fixed)`.
 
 ### Audit Real API Contracts
 
@@ -136,61 +159,44 @@ python -m driftlock.cli.main audit path/to/base_api.py path/to/head_api.py --rep
 
 Options:
 - `--repo PATH`: Root directory to scan for blast radius dependencies (default: `.`)
+- `--fix`: Automatically remediate impacted files after auditing
 - `--json`: Output report as formatted JSON instead of terminal tables and trees
 
 ---
 
-## 📋 Sample Demo Walkthrough
+## 🌐 Interactive Web Dashboard
 
-In `fixtures/demo_repo/`:
-- **Base Contract** (`api_base.py`):
-  ```python
-  class UserCreate(BaseModel):
-      username: str
-      email: str
-  ```
-- **Head Contract** (`api_head.py`):
-  ```python
-  class UserCreate(BaseModel):
-      username: str
-      email: str
-      tier: str                  # BREAKING: Required field added
-      organization_id: int = 1   # NON-BREAKING: Optional field with default
-  ```
+Launch the interactive dark-themed web dashboard for live demos and hackathon judging:
 
-### CLI Terminal Output
-
+```bash
+streamlit run app.py
 ```
-DriftLock: AST Contract Drift & Blast Radius Audit
-================================================================================
-Base Contract: fixtures/demo_repo/api_base.py
-Head Contract: fixtures/demo_repo/api_head.py
-Repository:    fixtures/demo_repo
-================================================================================
 
-Contract Drift Summary (4 changes detected)
---------------------------------------------------------------------------------
-Category     Identifier               Breaking?   Details
---------------------------------------------------------------------------------
-FIELD_ADDED  UserCreate.tier          BREAKING    Field 'tier' added (type=str, required=True)
-FIELD_ADDED  UserCreate.org_id        SAFE        Field 'organization_id' added (type=int, default=1)
-FIELD_ADDED  UserResponse.tier        BREAKING    Field 'tier' added (type=str, required=True)
-FIELD_ADDED  UserResponse.org_id      BREAKING    Field 'organization_id' added (type=int, required=True)
---------------------------------------------------------------------------------
+### Dashboard Features:
+1. **Scenario Selector**:
+   - `PR #42: UserCreate Schema Expansion` (preloaded scenario from `fixtures/demo_repo`)
+   - `Live Contract Playground` (interactive side-by-side Python code editor for custom contracts)
+2. **Metric Cards**: Real-time counter of Breaking Changes, Non-Breaking Changes, Stale Tests, Stale Docs, and Stale Agent Memory.
+3. **Side-by-Side AST Diff**: Deep structural comparison of schemas, fields, routes, and decorators.
+4. **Blast Radius Breakdown**: Visual inspection of downstream dependencies and risk ratings.
+5. **Alan AI Brief**: Instant generation of structured remediation prompts for AI agents.
+6. **⚡ 1-Click Auto-Remediation**: Executes `DriftRemediator`, renders syntax-highlighted unified Git diffs, and flips status from `DRIFT DETECTED` to `✓ ALL CONTRACTS IN SYNC`.
 
-Blast Radius Dependency Tree (10 stale references found)
--- TEST (2 hits)
-   └── fixtures/demo_repo/tests/test_users.py
-       ├── Test references 'UserCreate' but is missing newly added field 'organization_id'
-       └── -> Update test fixtures and assertions to include 'organization_id'
--- DOCUMENTATION (4 hits)
-   └── fixtures/demo_repo/README.md
-       ├── Documentation references 'UserCreate' but is missing newly added field 'tier'
-       └── -> Add documentation for the new field 'tier' on 'UserCreate'
--- AGENT MEMORY (4 hits)
-   └── fixtures/demo_repo/AGENT_CONTEXT.md
-       ├── Agent context references 'UserCreate' but is missing newly added field 'tier'
-       └── -> Update agent context to include the new field 'tier' in 'UserCreate' definition
+---
+
+## 🤖 Alan AI Agent Integration (`/driftlock`)
+
+DriftLock provides native skill specifications:
+- Root [SKILL.md](SKILL.md)
+- Custom Alan skill [.alan/skills/driftlock.md](.alan/skills/driftlock.md)
+
+### Agent Workflow:
+```
+1. Developer triggers: "/driftlock audit"
+2. Alan Agent runs: "python -m driftlock.cli.main audit <base> <head> --repo ."
+3. Alan Agent consumes the structured Remediation Brief.
+4. Alan Agent applies patches or executes: "python -m driftlock.cli.main demo --fix"
+5. Alan Agent verifies repository synchronization with zero regressions.
 ```
 
 ---
@@ -215,6 +221,9 @@ DriftLock operates without code execution, parsing abstract syntax trees via Pyt
 
 ```
 Driftlock/
+├── .alan/
+│   └── skills/
+│       └── driftlock.md        # Alan AI skill specification
 ├── driftlock/
 │   ├── core/
 │   │   ├── models.py           # Pydantic contract definitions (Routes, Schemas, Fields)
@@ -222,8 +231,10 @@ Driftlock/
 │   │   └── diff.py             # Contract diffing engine (Breaking vs. Safe classification)
 │   ├── blast_radius/
 │   │   └── graph.py            # Blast radius mapper (Tests, Docs, Agent Memory)
+│   ├── sync/
+│   │   └── remediator.py       # Closed-loop self-healing engine (AST/Regex + Open Model API)
 │   └── cli/
-│       └── main.py             # Typer + Rich terminal UI & JSON export
+│       └── main.py             # Typer + Rich terminal UI & --fix automation
 ├── fixtures/
 │   └── demo_repo/              # Complete drift scenario fixtures
 │       ├── api_base.py         # Original contract
@@ -234,7 +245,10 @@ Driftlock/
 │           └── test_users.py   # Stale unit test
 ├── tests/
 │   ├── test_parser.py          # 8 parser unit tests
-│   └── test_diff_and_blast.py  # 19 diff, blast radius, and CLI integration tests
+│   ├── test_diff_and_blast.py  # 19 diff, blast radius, and CLI integration tests
+│   └── test_remediation.py     # 8 closed-loop remediation & --fix verification tests
+├── app.py                      # Interactive Streamlit Web Dashboard
+├── SKILL.md                    # Root AI agent skill specification
 ├── DRIFTLOCK_STATE.md          # Architecture log & phase tracker
 ├── dev_phases.md               # Phase roadmap specification
 ├── pyproject.toml              # Project configuration & pytest settings
@@ -252,8 +266,9 @@ Driftlock/
 | **2** | **Blast Radius Graph** | Map AST diffs to impacted tests, docs, and `AGENT_CONTEXT.md` | 🟢 Complete |
 | **3** | **Remediation Brief** | Synthesize actionable repair instructions for AI agents | 🟢 Complete |
 | **4** | **Terminal Visualizer & CLI** | Rich tree & table UI with JSON output for CI/CD | 🟢 Complete |
-| **5** | **Git Ops & Automated PR** | Automatic patch application, branch creation, and GitHub PR | ⚪ Planned |
-| **6** | **Demo Video & Packaging** | End-to-end screen recording & PyPI distribution | 🟡 In Progress |
+| **5** | **Closed-Loop Remediation** | Self-healing engine with `--fix` and git diff generation | 🟢 Complete |
+| **6** | **Interactive Web Dashboard**| Streamlit dark-theme UI with 1-click self-healing & custom editor | 🟢 Complete |
+| **7** | **Alan AI Skill** | Native `/driftlock` skill for automated agent consistency workflows | 🟢 Complete |
 
 ---
 
