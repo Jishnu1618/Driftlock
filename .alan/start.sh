@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Starts what every DriftLock session needs, from the repository's own directory.
-# DriftLock is a library plus CLI with no external services (no database, queue,
-# or web server), so there is no long-running daemon to launch. This script
-# makes sure the virtual environment is present and usable, and records a
-# readiness line for the session. It is safe to re-run on a disk resume.
+# DriftLock's user-facing surface is the Streamlit dashboard (app.py), so this
+# launches it in the background and exits. Safe to re-run on a disk resume: an
+# already running dashboard is left alone.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,21 +10,30 @@ cd "$REPO_DIR"
 
 # Logs live outside the repository so the working tree stays clean.
 LOG_DIR="${HOME}/.alan/logs"
-LOG_FILE="$LOG_DIR/driftlock-start.log"
+LOG_FILE="${LOG_DIR}/driftlock-start.log"
 mkdir -p "$LOG_DIR"
 
-if [ ! -x "$REPO_DIR/.venv/bin/python" ]; then
+PORT="${DRIFTLOCK_PORT:-8501}"
+VENV_PY="$REPO_DIR/.venv/bin/python"
+
+if [ ! -x "$VENV_PY" ]; then
   # The image build normally provides .venv; recreate it if it is missing.
   python3 -m venv .venv
-  .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
+  "$VENV_PY" -m pip install --disable-pip-version-check -r requirements.txt
 fi
 
-{
-  echo "--- driftlock session start $(date -Is) ---"
-  "$REPO_DIR/.venv/bin/python" -c "import driftlock; print('driftlock', driftlock.__version__)"
-  "$REPO_DIR/.venv/bin/python" -m driftlock.cli.main --help >/dev/null && echo "cli: ok"
-  echo "interpreter: $REPO_DIR/.venv/bin/python"
-  echo "repo: $REPO_DIR"
-} >>"$LOG_FILE" 2>&1
+# Skip the launch when the dashboard already answers (disk resume).
+if curl -fsS -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/_stcore/health"; then
+  echo "DriftLock dashboard already running on port ${PORT}"
+  exit 0
+fi
 
-echo "DriftLock ready. Activate with: source $REPO_DIR/.venv/bin/activate"
+# Plain start command, backgrounded, output to the log file.
+nohup "$VENV_PY" -m streamlit run app.py \
+  --server.port "$PORT" \
+  --server.address 0.0.0.0 \
+  --server.headless true \
+  --browser.gatherUsageStats false \
+  >>"$LOG_FILE" 2>&1 &
+
+echo "DriftLock dashboard starting on port ${PORT} (log: $LOG_FILE)"
