@@ -6,12 +6,15 @@ build-backend = "setuptools.build_meta"
 name = "driftlock"
 version = "0.1.0"
 description = "Autonomous AST drift and contract consistency engine"
-readme = "DRIFTLOCK_STATE.md"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7.0",
     "rich>=13.7.0",
     "typer>=0.12.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "httpx>=0.27.0",
 ]
 
 [project.optional-dependencies]
@@ -20,7 +23,11 @@ dev = [
 ]
 
 [project.scripts]
-driftlock = "driftlock.cli:main"
+driftlock = "driftlock.cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["driftlock*"]
+exclude = ["tests*", "fixtures*", "web*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
