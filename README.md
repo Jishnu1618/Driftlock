@@ -5,7 +5,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Control%20Plane-driftlock--xicn.onrender.com-6366f1?style=for-the-badge&logo=render&logoColor=white)](https://driftlock-xicn.onrender.com/)
 [![CI Gatekeeper](https://img.shields.io/github/actions/workflow/status/Jishnu1618/Driftlock/driftlock-ci.yml?branch=main&label=CI%20Gatekeeper&style=for-the-badge)](https://github.com/Jishnu1618/Driftlock/actions/workflows/driftlock-ci.yml)
-[![Tests Passing](https://img.shields.io/badge/tests-42%20passed%20%C2%B7%20100%25-10B981?style=for-the-badge)](tests/)
+[![Tests Passing](https://img.shields.io/badge/tests-56%20passed%20%C2%B7%20100%25-10B981?style=for-the-badge)](tests/)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=for-the-badge)](https://www.python.org/)
 [![Alan AI Skill](https://img.shields.io/badge/Alan%20AI%20Skill-%2Fdriftlock-purple?style=for-the-badge)](.alan/skills/driftlock.md)
 
@@ -224,6 +224,87 @@ Coding agents can execute the `/driftlock` command to:
 
 ---
 
+## 🔌 Native MCP Adapter
+
+DriftLock ships a thin Model Context Protocol server at [`driftlock/mcp_server.py`](driftlock/mcp_server.py), built on the official Python SDK (`mcp>=2.3`, `MCPServer`) over **stdio**. It does not reimplement detection: audits and the fixture demo invoke the existing Typer CLI and return its versioned JSON report unchanged, while remediation reuses `DriftRemediator` in deterministic offline mode.
+
+```mermaid
+flowchart LR
+    Client["MCP client"] -->|"stdio JSON-RPC"| Adapter["driftlock.mcp_server"]
+    Adapter -->|"argv, 120s timeout"| CLI["python -m driftlock.cli.main audit --json"]
+    Adapter -->|"authorize=true only"| Rem["DriftRemediator (offline)"]
+    CLI --> Engine["AST parser · diff · blast radius"]
+    Rem --> Engine
+```
+
+### Tools
+
+| Tool | Mutates files | Description |
+| :--- | :--- | :--- |
+| `driftlock_audit` | No | Compares a base and head contract, scans the repository for stale `[TEST]`, `[DOCS]`, and `[AGENT_MEMORY]` files, and returns the CLI JSON report. `ci=true` applies CI gate semantics. |
+| `driftlock_demo` | No | Runs the bundled `fixtures/demo_repo` demonstration. The result is labeled `fixture_demo` / `is_production_audit: false`. |
+| `driftlock_apply_fix` | **Yes** | Requires `authorize=true`. Runs deterministic offline remediation, then returns per-file unified diffs, changed files, and a post-fix re-audit. |
+
+Results keep the CLI schema intact under `report` and separate execution from diagnostics:
+
+```json
+{
+  "mode": "production_audit",
+  "is_production_audit": true,
+  "repository_root": "/abs/project",
+  "exit_code": 0,
+  "report": {"schema_version": "1.0", "has_drift": false, "ci": {"status": "passed", "exit_code": 0}},
+  "diagnostics": ["Parsing base contract: ...", "CI Gatekeeper: PASSED ..."]
+}
+```
+
+`exit_code` mirrors the CLI exactly: `0` for a normal audit even when drift exists, `1` under `ci=true` when breaking drift or stale artifacts remain.
+
+### Prerequisites and setup
+
+- Python 3.11+ and the project dependencies: `pip install -e .` (or `pip install -r requirements.txt`).
+- `DRIFTLOCK_MCP_WORKSPACE` must be set to the absolute project root. The server refuses to start a tool without it.
+- Run over stdio only. stdout is the MCP protocol channel; the adapter never prints to it.
+
+```bash
+export DRIFTLOCK_MCP_WORKSPACE=/absolute/path/to/project
+python -m driftlock.mcp_server
+# equivalent console script (after pip install -e .):
+driftlock-mcp
+```
+
+Clients that accept an `mcpServers` JSON block can register the command directly:
+
+```json
+{
+  "mcpServers": {
+    "driftlock": {
+      "command": "/absolute/path/to/.venv/bin/python",
+      "args": ["-m", "driftlock.mcp_server"],
+      "cwd": "/absolute/path/to/Driftlock",
+      "env": {"DRIFTLOCK_MCP_WORKSPACE": "/absolute/path/to/project"}
+    }
+  }
+}
+```
+
+Relative `base_contract` and `head_contract` paths are resolved from `repository_root`. Every supplied path is canonicalized with symlinks resolved and must stay inside `DRIFTLOCK_MCP_WORKSPACE`; traversal (`../`) and absolute outside paths are rejected. Audits execute the CLI with an argument list (no shell), a 120-second timeout, and captured stdout, stderr, and exit status. Fixes never call a model or the network.
+
+### Registering with Alan
+
+Alan documents custom connectors at **Settings → team → Plugins → MCP → Add custom connector**, with credentials stored encrypted ([Plugins and MCP](https://docs.tryalan.ai/docs/skills/plugins-and-mcp)). The public documentation describes service connections; it does **not** document a stdio command transport.
+
+This adapter is stdio-only and must run where the repository checkout lives. A URL-based connector executed by Alan's hosted control plane cannot read a cloud sandbox or a local checkout, so this server cannot be registered as a remote URL service:
+
+1. Use a session target where the process can be spawned locally (This computer / a team VM, or another local MCP client).
+2. Start the server with `DRIFTLOCK_MCP_WORKSPACE` set, using `python -m driftlock.mcp_server` or `driftlock-mcp`.
+3. Register that command in the client's MCP configuration. If your Alan connector dialog accepts a local command, use the same command and environment variable; this transport is not documented, so verify it in your workspace before relying on it.
+4. If local command registration is unavailable, keep the CLI fallback in [`SKILL.md`](SKILL.md) and [`.alan/skills/driftlock.md`](.alan/skills/driftlock.md); it uses the same engine and JSON report.
+
+The adapter exposes no HTTP listener and no public endpoint.
+
+---
+
 ## 🧪 Comprehensive Test Suite
 
 DriftLock maintains a 100% passing test suite across parser determinism, contract diff logic, blast radius mapping, closed-loop remediation, and REST API endpoints:
@@ -233,7 +314,7 @@ pytest tests/ -v
 ```
 
 ```text
-collected 42 items
+collected 56 items
 
 tests/test_api.py::test_api_health PASSED
 tests/test_api.py::test_api_demo PASSED
@@ -255,7 +336,7 @@ tests/test_remediation.py::TestDriftRemediator::test_remediation_reduces_impacte
 tests/test_remediation.py::TestDriftRemediator::test_remediation_patches_test_file PASSED
 tests/test_remediation.py::TestDriftRemediator::test_remediation_patches_agent_memory PASSED
 ...
-======================== 42 passed in 2.19s ========================
+======================== 56 passed in 2.38s ========================
 ```
 
 ---
@@ -296,11 +377,12 @@ driftlock/
 │   │   └── remediator.py     # Closed-loop auto-remediation engine
 │   ├── api/
 │   │   └── server.py         # FastAPI backend server with REST endpoints
-│   └── cli/
-│       ├── __init__.py       # CLI package exports
-│       └── main.py           # Typer CLI with Rich terminal formatting & --ci
+│   ├── cli/
+│   │   ├── __init__.py       # CLI package exports
+│   │   └── main.py           # Typer CLI with Rich terminal formatting & --ci
+│   └── mcp_server.py         # Stdio MCP adapter (audit, demo, authorized fix)
 ├── fixtures/demo_repo/       # Built-in demo fixtures (API, tests, docs, agent memory)
-├── tests/                    # 42 unit and integration tests
+├── tests/                    # 56 unit and integration tests
 ├── web/
 │   └── index.html            # Dark-mode developer control plane (Stitch MCP design)
 ├── Procfile                  # Dyno process definition

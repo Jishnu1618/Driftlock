@@ -6,6 +6,7 @@ Covers:
 - CLI demo command execution
 """
 
+import ast
 import json
 import os
 from pathlib import Path
@@ -463,3 +464,115 @@ class TestCLIJsonContract:
         assert data["ci"]["exit_code"] is None
         assert "CI Gatekeeper" not in result.stdout
         assert "CI Gatekeeper" not in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Tests: controlled mutation of the real production contract
+# ---------------------------------------------------------------------------
+
+def _build_mutated_production_pair(tmp_path):
+    """Copy the production contract and add one required field in the copy.
+
+    The mutation targets ``CustomAuditRequest`` in ``driftlock/api/server.py``
+    because a required field without a default must classify as a breaking
+    ``FIELD_ADDED``. Both files live under ``tmp_path``; the production file is
+    only read.
+    """
+    project_root = Path(__file__).resolve().parent.parent
+    server = project_root / "driftlock" / "api" / "server.py"
+
+    base = tmp_path / "server_base.py"
+    head = tmp_path / "server_head.py"
+    base.write_bytes(server.read_bytes())
+
+    source = base.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    target = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.ClassDef) and node.name == "CustomAuditRequest"
+    )
+    lines = source.splitlines(keepends=True)
+    lines.insert(
+        target.end_lineno,
+        '    request_id: str = Field(..., description="Caller-supplied idempotency key")\n',
+    )
+    head.write_text("".join(lines), encoding="utf-8")
+    ast.parse(head.read_text(encoding="utf-8"))  # mutation stays syntactically valid
+
+    return server, base, head
+
+
+class TestCLIProductionContractMutation:
+    """A real production-shaped model change must be detected, not self-compared."""
+
+    def test_production_model_mutation_detected_in_json(self, tmp_path):
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        server, base, head = _build_mutated_production_pair(tmp_path)
+        before = server.read_bytes()
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(base),
+            "--head", str(head),
+            "--repo", str(tmp_path),
+            "--json",
+        ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["has_drift"] is True
+        assert data["has_breaking_drift"] is True
+        assert data["total_drifts"] == 1
+        assert data["breaking_drifts"] == 1
+        assert data["non_breaking_drifts"] == 0
+        assert data["drifts"] == [{
+            "category": "FIELD_ADDED",
+            "identifier": "CustomAuditRequest.request_id",
+            "details": (
+                "Field 'request_id' added to 'CustomAuditRequest' "
+                "(type=str, required=True, default=None)"
+            ),
+            "is_breaking": True,
+        }]
+        assert data["blast_radius"] == {
+            "total_impacted_files": 0,
+            "impacted_artifacts": [],
+        }
+        assert data["ci"]["enabled"] is False
+        assert data["ci"]["status"] == "not_run"
+        assert "CI Gatekeeper" not in result.stdout
+        # The production source is never touched by the scenario.
+        assert server.read_bytes() == before
+
+    def test_production_model_mutation_blocks_ci(self, tmp_path):
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        server, base, head = _build_mutated_production_pair(tmp_path)
+        before = server.read_bytes()
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(base),
+            "--head", str(head),
+            "--repo", str(tmp_path),
+            "--json",
+            "--ci",
+        ])
+
+        assert result.exit_code == 1
+        data = json.loads(result.stdout)  # exactly one JSON document on stdout
+        assert data["ci"] == {
+            "enabled": True,
+            "status": "blocked",
+            "exit_code": 1,
+            "blocking_reasons": ["breaking_contract_drift"],
+            "remaining_impacted_files": 0,
+        }
+        assert "CI Gatekeeper: BLOCKED" in result.stderr
+        assert "CI Gatekeeper" not in result.stdout
+        assert server.read_bytes() == before
