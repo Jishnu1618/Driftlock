@@ -91,191 +91,187 @@
     }
   </style>
 </head>
-<body class="bg-canvas text-slate-200 font-sans antialiased min-h-screen selection:bg-indigo-500/30 selection:text-indigo-200">
+<body class="bg-canvas text-slate-200 font-sans antialiased min-h-screen selection:bg-indigo-500/30 selection:text-indigo-200 overflow-x-hidden">
 
   <!-- Main Container -->
-  <div class="flex flex-col min-h-screen border-x border-border/40 max-w-[1720px] mx-auto">
+  <div class="flex flex-col min-h-screen border-x border-border/40 w-full max-w-full mx-auto overflow-x-hidden">
 
     <!-- 1. Top Command Header -->
-    <header class="sticky top-0 z-50 bg-[#090A0F]/90 backdrop-blur-md border-b border-border px-5 py-3">
-      <div class="flex items-center justify-between gap-4">
-        
-        <!-- Left: Brand, Version, Alan AI Skill Pill -->
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 via-surface-elevated to-surface border border-indigo-500/30 shadow-inner">
-            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <circle cx="12" cy="11" r="2"/>
+    <header class="sticky top-0 z-50 bg-[#090A0F]/90 backdrop-blur-md border-b border-border w-full max-w-full box-border px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap lg:flex-nowrap">
+      
+      <!-- Left: Brand, Version, Alan AI Skill Pill -->
+      <div class="flex items-center gap-2.5 min-w-0 shrink-0">
+        <div class="relative flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500/20 via-surface-elevated to-surface border border-indigo-500/30 shadow-inner shrink-0">
+          <svg class="w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <circle cx="12" cy="11" r="2"/>
+          </svg>
+          <span id="headerDriftDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#090A0F]"></span>
+        </div>
+
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-base font-bold tracking-tight text-white flex items-center gap-1">
+            DriftLock
+          </span>
+          <span class="hidden xl:inline font-mono text-[11px] text-slate-400 font-medium tracking-tight">Deterministic Consistency</span>
+        </div>
+
+        <div class="h-3.5 w-[1px] bg-border mx-0.5 hidden sm:block"></div>
+
+        <!-- Badges -->
+        <div class="flex items-center gap-1.5">
+          <span class="px-2 py-0.5 text-[10px] font-mono font-medium rounded-full bg-surface-subtle text-slate-400 border border-border flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            v1.0
+          </span>
+
+          <span class="px-2 py-0.5 text-[10px] font-mono font-medium rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 flex items-center gap-1 shadow-sm">
+            <svg class="w-2.5 h-2.5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 16v-1a4.978 4.978 0 00-1.5-3.5A6.002 6.002 0 0118 16h-2zM4.5 11.5A4.978 4.978 0 003 15v1h2v-1c0-.85.25-1.64.68-2.31A6.002 6.002 0 014.5 11.5z"/>
             </svg>
-            <span id="headerDriftDot" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#090A0F]"></span>
-          </div>
-
-          <div class="flex items-baseline gap-2">
-            <span class="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-              DriftLock
-            </span>
-            <span class="font-mono text-[11px] text-slate-400 font-medium tracking-tight">Deterministic Consistency</span>
-          </div>
-
-          <div class="h-4 w-[1px] bg-border mx-1"></div>
-
-          <!-- Badges -->
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-[11px] font-mono font-medium rounded-full bg-surface-subtle text-slate-400 border border-border flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-              v1.0.0 · AST Engine
-            </span>
-
-            <span class="px-2 py-0.5 text-[11px] font-mono font-medium rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 flex items-center gap-1.5 shadow-sm">
-              <svg class="w-3 h-3 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 16v-1a4.978 4.978 0 00-1.5-3.5A6.002 6.002 0 0118 16h-2zM4.5 11.5A4.978 4.978 0 003 15v1h2v-1c0-.85.25-1.64.68-2.31A6.002 6.002 0 014.5 11.5z"/>
-              </svg>
-              /driftlock Alan AI Skill
-            </span>
-          </div>
+            /driftlock Skill
+          </span>
         </div>
-
-        <!-- Center: Live Status Banner Pill (Dynamically flips between Drift and Synced) -->
-        <div class="flex items-center justify-center flex-1 max-w-xl">
-          <div id="statusBanner" class="w-full flex items-center justify-between px-4 py-1.5 rounded-full glass-pill border transition-all duration-300 border-rose-500/30 bg-rose-950/20 shadow-glow-rose">
-            <div class="flex items-center gap-2.5 overflow-hidden">
-              <span id="statusIconPulse" class="relative flex h-2.5 w-2.5 shrink-0">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-              </span>
-              <span id="statusText" class="font-mono text-xs font-semibold text-rose-400 tracking-wide truncate">
-                ✗ DRIFT DETECTED — 3 Impacted Artifacts (10 Contract Hits)
-              </span>
-            </div>
-
-            <!-- Quick Toggle Switcher for judges -->
-            <button id="toggleStatusState" onclick="toggleSimulatedState()" title="Simulate remediation state" class="ml-2 px-2 py-0.5 text-[10px] font-mono text-slate-400 hover:text-slate-200 bg-surface/80 hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 shrink-0">
-              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-              <span>Toggle State</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Right: Actions -->
-        <div class="flex items-center gap-2.5 shrink-0">
-          <button onclick="resetDemo()" class="px-3 py-1.5 text-xs font-medium font-sans text-slate-400 hover:text-slate-100 hover:bg-surface-elevated rounded-md border border-transparent hover:border-border transition-all flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Reset Demo
-          </button>
-
-          <button id="primaryCta" onclick="runRemediation()" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-md border border-indigo-400/40 shadow-glow-indigo transition-all flex items-center gap-2 group">
-            <span class="text-amber-300 group-hover:scale-110 transition-transform">⚡</span>
-            <span id="primaryCtaText">Run Auto-Remediation & Verify Sync</span>
-            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-indigo-950/70 border border-indigo-400/30 text-indigo-200">⌘R</span>
-          </button>
-        </div>
-
       </div>
+
+      <!-- Center: Live Status Banner Pill (Dynamically flips between Drift and Synced) -->
+      <div class="flex items-center justify-center min-w-0 flex-1 max-w-lg">
+        <div id="statusBanner" class="w-full flex items-center justify-between px-3 py-1 rounded-full glass-pill border transition-all duration-300 border-rose-500/30 bg-rose-950/20 shadow-glow-rose">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <span id="statusIconPulse" class="relative flex h-2 w-2 shrink-0">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            <span id="statusText" class="font-mono text-xs font-semibold text-rose-400 tracking-wide truncate">
+              ✗ DRIFT DETECTED · 3 Stale Artifacts
+            </span>
+          </div>
+
+          <!-- Quick Toggle Switcher for judges -->
+          <button id="toggleStatusState" onclick="toggleSimulatedState()" title="Simulate remediation state" class="ml-2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 hover:text-slate-200 bg-surface/80 hover:bg-surface-elevated rounded border border-border transition-colors flex items-center gap-1 shrink-0">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            <span>Toggle</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center gap-2 shrink-0 ml-auto">
+        <button onclick="resetDemo()" class="px-2.5 py-1.5 text-xs font-medium font-sans text-slate-400 hover:text-slate-100 hover:bg-surface-elevated rounded-md border border-transparent hover:border-border transition-all flex items-center gap-1">
+          <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+
+        <button id="primaryCta" onclick="runRemediation()" class="px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-md border border-indigo-400/40 shadow-glow-indigo transition-all flex items-center gap-1.5 group">
+          <span class="text-amber-300 group-hover:scale-110 transition-transform">⚡</span>
+          <span id="primaryCtaText">Auto-Remediate & Sync</span>
+          <span class="px-1 py-0.2 rounded text-[9px] font-mono bg-indigo-950/70 border border-indigo-400/30 text-indigo-200">⌘R</span>
+        </button>
+      </div>
+
     </header>
 
     <!-- Subheader Telemetry Bar -->
-    <div class="px-5 py-2 bg-surface/50 border-b border-border/60 flex items-center justify-between text-[11px] font-mono text-slate-400">
-      <div class="flex items-center gap-4">
-        <span class="flex items-center gap-1.5 text-slate-300">
-          <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+    <div class="px-4 py-1.5 bg-surface/50 border-b border-border/60 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs font-mono text-slate-400">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="flex items-center gap-1 text-slate-300">
+          <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
           repo: <span class="text-slate-100 font-semibold">fixtures/demo_repo</span>
         </span>
-        <span class="text-border">/</span>
+        <span class="text-border">·</span>
         <span class="flex items-center gap-1">
-          scenario: <span class="text-indigo-300 bg-indigo-950/40 px-1.5 py-0.5 rounded border border-indigo-900/60 font-semibold">PR #42: UserCreate Schema Expansion</span>
+          <span class="text-indigo-300 bg-indigo-950/40 px-1.5 py-0.5 rounded border border-indigo-900/60 font-semibold">PR #42: UserCreate Schema Expansion</span>
         </span>
-        <span class="text-border">/</span>
+        <span class="text-border">·</span>
         <span class="flex items-center gap-1">
-          contracts: <span class="text-slate-200">api_base.py → api_head.py</span>
+          <span class="text-slate-200">api_base.py → api_head.py</span>
         </span>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <span class="flex items-center gap-1.5">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          AST Daemon: <span class="text-emerald-400">Zero-LLM Native AST Active</span>
+          AST Engine: <span class="text-emerald-400">Native Python (Zero-LLM)</span>
         </span>
-        <span class="text-border">|</span>
-        <span>Deterministic Hash: <span class="text-slate-300">sha256:d8a9e10f</span></span>
+        <span class="hidden xl:inline text-border">|</span>
+        <span class="hidden xl:inline">sha256:d8a9e10f</span>
       </div>
     </div>
 
     <!-- 2. KPI Bento Row (4 Metric Cards) -->
-    <section class="p-5 pb-3">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+    <section class="px-4 py-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
         <!-- Card 1: Breaking Changes -->
-        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group">
-          <div class="flex items-center justify-between mb-2">
+        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-medium text-slate-400 group-hover:text-slate-300">Breaking Changes</span>
-            <span class="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">
               CRITICAL
             </span>
           </div>
-          <div class="flex items-baseline gap-2 mb-2">
-            <span id="kpiBreakingCount" class="font-mono text-2xl font-bold text-white tracking-tight">1</span>
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="kpiBreakingCount" class="font-mono text-xl font-bold text-white tracking-tight">1</span>
             <span class="text-xs text-rose-400/90 font-mono">Schema Violation</span>
           </div>
-          <div class="p-2 rounded bg-surface-subtle border border-border/80 flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-            <code class="font-mono text-[11px] text-rose-300 truncate font-medium">UserCreate.tier (required: True)</code>
+          <div class="truncate text-xs font-mono text-rose-300/90 pt-1 border-t border-border/40">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block mr-1"></span>
+            UserCreate.tier (required)
           </div>
         </div>
 
         <!-- Card 2: Non-Breaking Changes -->
-        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group">
-          <div class="flex items-center justify-between mb-2">
+        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-medium text-slate-400 group-hover:text-slate-300">Non-Breaking Changes</span>
-            <span class="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
               COMPATIBLE
             </span>
           </div>
-          <div class="flex items-baseline gap-2 mb-2">
-            <span id="kpiNonBreakingCount" class="font-mono text-2xl font-bold text-white tracking-tight">1</span>
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="kpiNonBreakingCount" class="font-mono text-xl font-bold text-white tracking-tight">1</span>
             <span class="text-xs text-amber-400/90 font-mono">Additive Field</span>
           </div>
-          <div class="p-2 rounded bg-surface-subtle border border-border/80 flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-            <code class="font-mono text-[11px] text-amber-300 truncate font-medium">UserCreate.organization_id (default: 1)</code>
+          <div class="truncate text-xs font-mono text-amber-300/90 pt-1 border-t border-border/40">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block mr-1"></span>
+            UserCreate.organization_id (default: 1)
           </div>
         </div>
 
         <!-- Card 3: Blast Radius Impact -->
-        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group">
-          <div class="flex items-center justify-between mb-2">
+        <div class="bg-surface rounded-lg p-3.5 border border-border hover:border-border-hover transition-colors shadow-surface-drop group flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-medium text-slate-400 group-hover:text-slate-300">Blast Radius Impact</span>
-            <span id="kpiScopeTag" class="font-mono text-[10px] text-slate-400">Downstream scope</span>
+            <span id="kpiScopeTag" class="px-1.5 py-0.5 text-[9px] font-mono rounded bg-surface-subtle text-rose-400 border border-border">3 Files</span>
           </div>
-          <div class="flex items-baseline gap-2 mb-2">
-            <span id="kpiFilesCount" class="font-mono text-2xl font-bold text-white tracking-tight">3 Files</span>
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="kpiFilesCount" class="font-mono text-xl font-bold text-white tracking-tight">3 Files</span>
             <span id="kpiStaleStatus" class="text-xs text-rose-400 font-mono">100% Stale</span>
           </div>
-          <div class="flex items-center gap-1.5 pt-0.5">
-            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-cyan-950/40 text-cyan-300 border border-cyan-800/60">[TEST]</span>
-            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-indigo-950/40 text-indigo-300 border border-indigo-800/60">[DOCS]</span>
-            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-purple-950/40 text-purple-300 border border-purple-800/60">[AGENT_MEMORY]</span>
+          <div class="truncate text-xs font-mono text-slate-400 pt-1 border-t border-border/40 flex items-center gap-1.5">
+            <span class="text-cyan-300">[TEST]</span>·<span class="text-indigo-300">[DOCS]</span>·<span class="text-purple-300">[AGENT_MEMORY]</span>
           </div>
         </div>
 
         <!-- Card 4: Verification Gate -->
-        <div id="gateCard" class="bg-surface rounded-lg p-3.5 border border-rose-900/40 bg-gradient-to-br from-rose-950/15 via-surface to-surface hover:border-rose-700/50 transition-colors shadow-surface-drop group">
-          <div class="flex items-center justify-between mb-2">
+        <div id="gateCard" class="bg-surface rounded-lg p-3.5 border border-rose-900/40 bg-gradient-to-br from-rose-950/15 via-surface to-surface hover:border-rose-700/50 transition-colors shadow-surface-drop group flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-medium text-slate-400 group-hover:text-slate-300">Verification Gate</span>
-            <span id="gateBadge" class="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1">
-              <svg class="w-3 h-3 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <span id="gateBadge" class="px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1">
+              <svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               LOCKED
             </span>
           </div>
-          <div class="flex items-baseline gap-2 mb-2">
-            <span id="gateText" class="font-mono text-lg font-bold text-rose-400 tracking-tight flex items-center gap-2">
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="gateText" class="font-mono text-xl font-bold text-rose-400 tracking-tight flex items-center gap-2">
               CI / PR BLOCKED
             </span>
           </div>
-          <div class="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-            <span id="gateDot" class="text-rose-400">●</span> 
-            <span id="gateDescription">Cannot merge with stale agent context</span>
+          <div class="truncate text-xs font-mono text-slate-400 pt-1 border-t border-border/40">
+            <span id="gateDot" class="text-rose-400 mr-1">●</span>
+            <span id="gateDescription">Cannot merge with stale context</span>
           </div>
         </div>
 
@@ -283,70 +279,62 @@
     </section>
 
     <!-- 3. Main Split Workbench (12-Column Grid) -->
-    <main class="flex-1 p-5 pt-1.5 grid grid-cols-12 gap-4">
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 px-4 pb-6 items-start">
 
       <!-- LEFT 5 COLUMNS: Interactive Blast Radius Dependency Graph -->
-      <section class="col-span-12 lg:col-span-5 flex flex-col gap-3">
-        <div class="bg-surface rounded-lg border border-border flex flex-col h-full shadow-surface-drop overflow-hidden">
+      <section class="lg:col-span-5 flex flex-col gap-3">
+        <div class="bg-surface rounded-lg border border-border flex flex-col shadow-surface-drop overflow-hidden">
           
           <!-- Header -->
-          <div class="px-4 py-3 border-b border-border bg-surface-subtle flex items-center justify-between">
+          <div class="px-3.5 py-2.5 border-b border-border bg-surface-subtle flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
               <h2 class="text-xs font-semibold tracking-wide text-white uppercase font-mono">Blast Radius Dependency Graph</h2>
             </div>
-            <span class="text-[11px] font-mono text-slate-400">Dependency Cascade</span>
+            <span class="text-[10px] font-mono text-slate-400">Cascade Tree</span>
           </div>
 
           <!-- Tree Root: Source Contract Change -->
-          <div class="p-4 bg-canvas/60 border-b border-border">
-            <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
-              <span>Root AST Mutation Source</span>
-              <span class="text-indigo-400 font-mono">FastAPI / Pydantic v2</span>
+          <div class="p-3 bg-canvas/60 border-b border-border">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+              <span>Root Mutation Source</span>
+              <span class="text-indigo-400 font-mono">Pydantic v2</span>
             </div>
 
-            <div class="p-2.5 rounded-md bg-surface-elevated border border-indigo-500/40 flex items-center justify-between shadow-sm">
-              <div class="flex items-center gap-2 overflow-hidden">
-                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-                <span class="font-mono text-xs text-white font-medium truncate">
-                  api_base.py <span class="text-slate-400">→</span> <span class="text-indigo-300 font-semibold">api_head.py</span>
-                </span>
+            <div class="p-2 rounded bg-surface-elevated border border-indigo-500/30 flex items-center justify-between text-xs font-mono shadow-sm">
+              <div class="flex items-center gap-1.5 truncate">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>
+                <span class="text-white font-medium">api_base.py</span>
+                <span class="text-slate-500">→</span>
+                <span class="text-indigo-300 font-semibold">api_head.py</span>
               </div>
-              <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+              <span class="px-1.5 py-0.5 text-[9px] font-mono rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0 ml-2">
                 +2 Fields AST Delta
-              </span>
-            </div>
-
-            <!-- Cascade Connector -->
-            <div class="relative py-2 flex items-center justify-center">
-              <div class="h-6 w-[2px] bg-gradient-to-b from-indigo-500 to-rose-500"></div>
-              <span class="absolute text-[10px] font-mono bg-canvas px-2 py-0.5 rounded border border-border text-slate-400">
-                cascades into 3 stale artifacts
               </span>
             </div>
           </div>
 
           <!-- Collapsible Category Cards Container -->
-          <div id="blastRadiusList" class="p-3.5 space-y-3 flex-1 overflow-y-auto">
+          <div id="blastRadiusList" class="p-3 space-y-2.5 flex-1 overflow-y-auto">
 
             <!-- Card 1: [TEST] tests/test_users.py -->
             <div class="artifact-card rounded-md border border-border bg-surface-subtle transition-all duration-200 overflow-hidden" data-file="test_users.py">
-              <div class="p-3 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-test-users')">
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                  <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/80">
+              <div class="p-2.5 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-test-users')">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/80">
                     [TEST]
                   </span>
                   <span class="font-mono text-xs text-slate-200 font-medium truncate">
                     tests/test_users.py
                   </span>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span id="badge-test-users" class="badge-status px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span id="badge-test-users" class="badge-status px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                     STALE
                   </span>
-                  <svg id="chevron-card-test-users" class="w-3.5 h-3.5 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg id="chevron-card-test-users" class="w-3 h-3 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </div>
@@ -354,17 +342,17 @@
 
               <div id="card-test-users" class="px-3 pb-3 pt-1 text-xs border-t border-border/50 bg-canvas/30 space-y-2">
                 <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span>Target: <span class="text-slate-200">test_create_user_success</span></span>
-                  <span class="text-rose-400 font-medium">Missing required field</span>
+                  <span>Scope: <span class="text-slate-200">Integration Test Suite</span></span>
+                  <span class="text-rose-400 font-medium">Missing 2 Fields</span>
                 </div>
                 <div class="p-2 rounded bg-surface border border-border text-[11px] font-mono text-slate-300 leading-relaxed">
                   <span class="text-slate-400 block text-[10px] uppercase font-sans mb-0.5">Reason Outdated:</span>
-                  Payload dictionary omits newly required field <code class="text-rose-300">tier</code>. Test suite fails validation on POST /v1/users.
+                  Payload dictionaries in <code class="text-rose-300">test_create_user_success</code> omit required <code class="text-rose-300">tier</code> and <code class="text-amber-300">organization_id</code>.
                 </div>
                 <div class="flex items-center justify-between pt-1">
                   <span class="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Action: Inject `tier` and `organization_id`
+                    Action: Inject fields &amp; assert response
                   </span>
                   <button onclick="switchTab('tab-diff'); highlightDiff('test_users.py')" class="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 underline">View Patch</button>
                 </div>
@@ -373,20 +361,20 @@
 
             <!-- Card 2: [DOCS] README.md -->
             <div class="artifact-card rounded-md border border-border bg-surface-subtle transition-all duration-200 overflow-hidden" data-file="README.md">
-              <div class="p-3 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-readme')">
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                  <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/80">
+              <div class="p-2.5 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-readme')">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/80">
                     [DOCS]
                   </span>
                   <span class="font-mono text-xs text-slate-200 font-medium truncate">
                     README.md
                   </span>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span id="badge-readme" class="badge-status px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span id="badge-readme" class="badge-status px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                     STALE
                   </span>
-                  <svg id="chevron-card-readme" class="w-3.5 h-3.5 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg id="chevron-card-readme" class="w-3 h-3 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </div>
@@ -394,8 +382,8 @@
 
               <div id="card-readme" class="px-3 pb-3 pt-1 text-xs border-t border-border/50 bg-canvas/30 space-y-2">
                 <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span>Section: <span class="text-slate-200"># API Specification</span></span>
-                  <span class="text-rose-400 font-medium">Outdated payload schema</span>
+                  <span>Scope: <span class="text-slate-200">Public API Documentation</span></span>
+                  <span class="text-rose-400 font-medium">Stale schema contract</span>
                 </div>
                 <div class="p-2 rounded bg-surface border border-border text-[11px] font-mono text-slate-300 leading-relaxed">
                   <span class="text-slate-400 block text-[10px] uppercase font-sans mb-0.5">Reason Outdated:</span>
@@ -413,20 +401,20 @@
 
             <!-- Card 3: [AGENT_MEMORY] AGENT_CONTEXT.md -->
             <div class="artifact-card rounded-md border border-border bg-surface-subtle transition-all duration-200 overflow-hidden" data-file="AGENT_CONTEXT.md">
-              <div class="p-3 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-agent')">
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                  <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-purple-950/60 text-purple-300 border border-purple-800/80">
+              <div class="p-2.5 cursor-pointer select-none flex items-center justify-between hover:bg-surface-elevated/60" onclick="toggleCard('card-agent')">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-purple-950/60 text-purple-300 border border-purple-800/80">
                     [AGENT_MEMORY]
                   </span>
                   <span class="font-mono text-xs text-slate-200 font-medium truncate">
                     AGENT_CONTEXT.md
                   </span>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span id="badge-agent" class="badge-status px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span id="badge-agent" class="badge-status px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                     STALE
                   </span>
-                  <svg id="chevron-card-agent" class="w-3.5 h-3.5 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg id="chevron-card-agent" class="w-3 h-3 text-slate-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </div>
@@ -454,7 +442,7 @@
           </div>
 
           <!-- Footer -->
-          <div class="p-3 bg-surface-subtle border-t border-border flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <div class="p-2.5 bg-surface-subtle border-t border-border flex items-center justify-between text-[10px] font-mono text-slate-400">
             <span>AST Parse Engine: <span class="text-slate-200">Native Python AST</span></span>
             <span class="text-indigo-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
@@ -466,42 +454,37 @@
       </section>
 
       <!-- RIGHT 7 COLUMNS: Multi-Tab Inspector -->
-      <section class="col-span-12 lg:col-span-7 flex flex-col">
-        <div class="bg-surface rounded-lg border border-border flex flex-col h-full shadow-surface-drop overflow-hidden">
+      <section class="lg:col-span-7 flex flex-col">
+        <div class="bg-surface rounded-lg border border-border flex flex-col shadow-surface-drop overflow-hidden">
           
           <!-- Tab Navigation Bar -->
-          <div class="flex items-center justify-between border-b border-border bg-surface-subtle px-2 pt-1.5">
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+          <div class="flex items-center border-b border-border bg-surface-subtle px-2 pt-1.5 overflow-x-hidden">
+            <div class="flex items-center gap-1 w-full flex-nowrap overflow-x-hidden">
               
               <!-- Tab 1 -->
-              <button onclick="switchTab('tab-diff')" id="btn-tab-diff" class="tab-btn px-3.5 py-2 text-xs font-mono font-medium rounded-t-md transition-all border-b-2 border-indigo-500 text-white bg-surface flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
-                <span>Unified Git Patches</span>
-                <span id="tabPatchCount" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">3</span>
+              <button onclick="switchTab('tab-diff')" id="btn-tab-diff" class="tab-btn whitespace-nowrap text-xs px-3 py-2 font-mono font-medium rounded-t-md transition-all border-b-2 border-indigo-500 text-white bg-surface flex items-center gap-1.5 shrink-0">
+                <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                <span>Unified Git Patches (3)</span>
               </button>
 
               <!-- Tab 2 -->
-              <button onclick="switchTab('tab-brief')" id="btn-tab-brief" class="tab-btn px-3.5 py-2 text-xs font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
-                <span>Alan Agent Remediation Brief</span>
+              <button onclick="switchTab('tab-brief')" id="btn-tab-brief" class="tab-btn whitespace-nowrap text-xs px-3 py-2 font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-1.5 shrink-0">
+                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
+                <span>Alan Remediation Brief</span>
               </button>
 
               <!-- Tab 3 -->
-              <button onclick="switchTab('tab-contracts')" id="btn-tab-contracts" class="tab-btn px-3.5 py-2 text-xs font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span>Base vs. Head AST Contracts</span>
+              <button onclick="switchTab('tab-contracts')" id="btn-tab-contracts" class="tab-btn whitespace-nowrap text-xs px-3 py-2 font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-1.5 shrink-0">
+                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Base vs. Head AST</span>
               </button>
 
               <!-- Tab 4 -->
-              <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn px-3.5 py-2 text-xs font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+              <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn whitespace-nowrap text-xs px-3 py-2 font-mono font-medium rounded-t-md transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-surface/50 flex items-center gap-1.5 shrink-0">
+                <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                 <span>Live AST Sandbox</span>
               </button>
 
-            </div>
-
-            <div class="flex items-center gap-2 pb-1.5 shrink-0">
-              <span class="text-[11px] font-mono text-slate-500">JetBrains Mono</span>
             </div>
           </div>
 
@@ -548,7 +531,7 @@
           <div id="content-tab-contracts" class="tab-content hidden flex-1 flex flex-col p-4 overflow-y-auto space-y-4">
             <div class="text-xs text-slate-400 font-mono pb-2 border-b border-border/60 flex items-center justify-between">
               <span>Deterministic AST Contract Comparison (Zero Execution)</span>
-              <span class="text-indigo-400">Pydantic & FastAPI Metadata</span>
+              <span class="text-indigo-400">Pydantic &amp; FastAPI Metadata</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -731,7 +714,7 @@
     async function runRemediation() {
       const btn = document.getElementById("primaryCta");
       const btnText = document.getElementById("primaryCtaText");
-      btnText.textContent = "Remediating & Verifying...";
+      btnText.textContent = "Remediating...";
       btn.classList.add("opacity-75", "cursor-wait");
 
       try {
@@ -756,7 +739,11 @@
         applySyncedUI();
         showToast("✓ Repositories synchronized (Simulated)!");
       } finally {
-        btnText.textContent = "✓ Synchronized (0 Remaining)";
+        if (appState.isSynced) {
+          btnText.textContent = "Synchronized (3/3 Fixed)";
+        } else {
+          btnText.textContent = "Auto-Remediate & Sync";
+        }
         btn.classList.remove("opacity-75", "cursor-wait");
       }
     }
@@ -804,7 +791,7 @@
               <span class="font-mono text-xs text-slate-200 font-semibold">${p.file_name}</span>
               <span class="text-[10px] font-mono text-slate-500">· [${p.artifact_type}]</span>
             </div>
-            <span class="text-[10px] font-mono text-emerald-400">Fixed & Verified ✓</span>
+            <span class="text-[10px] font-mono text-emerald-400">Fixed &amp; Verified ✓</span>
           </div>
           <div class="font-mono text-xs py-1.5 overflow-x-auto leading-relaxed">
             ${htmlLines}
@@ -819,73 +806,88 @@
 
       // 1. Status Banner
       const banner = document.getElementById("statusBanner");
-      banner.className = "w-full flex items-center justify-between px-4 py-1.5 rounded-full glass-pill border transition-all duration-300 border-emerald-500/30 bg-emerald-950/20 shadow-glow-emerald";
+      banner.className = "w-full flex items-center justify-between px-3 py-1 rounded-full glass-pill border transition-all duration-300 border-emerald-500/30 bg-emerald-950/20 shadow-glow-emerald";
       
       const dot = document.getElementById("statusIconPulse");
       dot.innerHTML = `
-        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
       `;
 
       const txt = document.getElementById("statusText");
       txt.className = "font-mono text-xs font-semibold text-emerald-400 tracking-wide truncate";
-      txt.textContent = "✓ REPOSITORY SYNCHRONIZED — 0 Stale Artifacts Remaining (3/3 Fixed)";
+      txt.textContent = "✓ SYNCHRONIZED · 0 Stale Artifacts";
 
       // Header dot
       const hDot = document.getElementById("headerDriftDot");
-      hDot.className = "absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#090A0F]";
+      hDot.className = "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#090A0F]";
+
+      // Primary CTA button state
+      const cta = document.getElementById("primaryCta");
+      const ctaText = document.getElementById("primaryCtaText");
+      if (ctaText) ctaText.textContent = "Synchronized (3/3 Fixed)";
+      if (cta) {
+        cta.classList.remove("bg-indigo-600", "hover:bg-indigo-500", "border-indigo-400/40");
+        cta.classList.add("bg-emerald-600", "hover:bg-emerald-500", "border-emerald-400/40");
+      }
 
       // 2. Bento KPI Cards
       document.getElementById("kpiFilesCount").textContent = "0 Files";
       document.getElementById("kpiFilesCount").classList.replace("text-white", "text-emerald-400");
-      document.getElementById("kpiStaleStatus").textContent = "0% Stale (All Clean)";
+      document.getElementById("kpiStaleStatus").textContent = "0% Stale (Clean)";
       document.getElementById("kpiStaleStatus").className = "text-xs text-emerald-400 font-mono";
 
       // 3. Verification Gate
       const gateCard = document.getElementById("gateCard");
-      gateCard.className = "bg-surface rounded-lg p-3.5 border border-emerald-900/40 bg-gradient-to-br from-emerald-950/15 via-surface to-surface hover:border-emerald-700/50 transition-colors shadow-surface-drop group";
+      gateCard.className = "bg-surface rounded-lg p-3.5 border border-emerald-900/40 bg-gradient-to-br from-emerald-950/15 via-surface to-surface hover:border-emerald-700/50 transition-colors shadow-surface-drop group flex flex-col justify-between";
       
       const gateBadge = document.getElementById("gateBadge");
-      gateBadge.className = "px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1";
-      gateBadge.innerHTML = `<svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg> UNLOCKED`;
+      gateBadge.className = "px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1";
+      gateBadge.innerHTML = `<svg class="w-2.5 h-2.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg> UNLOCKED`;
 
       const gateText = document.getElementById("gateText");
-      gateText.className = "font-mono text-lg font-bold text-emerald-400 tracking-tight flex items-center gap-2";
+      gateText.className = "font-mono text-xl font-bold text-emerald-400 tracking-tight flex items-center gap-2";
       gateText.textContent = "READY TO MERGE ✓";
 
       const gateDesc = document.getElementById("gateDescription");
       gateDesc.textContent = "All test, doc & memory contracts verified in sync";
-      document.getElementById("gateDot").className = "text-emerald-400";
+      document.getElementById("gateDot").className = "text-emerald-400 mr-1";
 
       // 4. Tree badges
       ["badge-test-users", "badge-readme", "badge-agent"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-          el.className = "badge-status px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          el.className = "badge-status px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
           el.textContent = "SYNCED ✓";
         }
       });
-
-      document.getElementById("tabPatchCount").className = "px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
     }
 
     function applyDriftUI() {
       appState.isSynced = false;
 
       const banner = document.getElementById("statusBanner");
-      banner.className = "w-full flex items-center justify-between px-4 py-1.5 rounded-full glass-pill border transition-all duration-300 border-rose-500/30 bg-rose-950/20 shadow-glow-rose";
+      banner.className = "w-full flex items-center justify-between px-3 py-1 rounded-full glass-pill border transition-all duration-300 border-rose-500/30 bg-rose-950/20 shadow-glow-rose";
       
       const dot = document.getElementById("statusIconPulse");
       dot.innerHTML = `
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
       `;
 
       const txt = document.getElementById("statusText");
       txt.className = "font-mono text-xs font-semibold text-rose-400 tracking-wide truncate";
-      txt.textContent = "✗ DRIFT DETECTED — 3 Impacted Artifacts (10 Contract Hits)";
+      txt.textContent = "✗ DRIFT DETECTED · 3 Stale Artifacts";
 
       const hDot = document.getElementById("headerDriftDot");
-      hDot.className = "absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#090A0F]";
+      hDot.className = "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#090A0F]";
+
+      const cta = document.getElementById("primaryCta");
+      const ctaText = document.getElementById("primaryCtaText");
+      if (ctaText) ctaText.textContent = "Auto-Remediate & Sync";
+      if (cta) {
+        cta.classList.remove("bg-emerald-600", "hover:bg-emerald-500", "border-emerald-400/40");
+        cta.classList.add("bg-indigo-600", "hover:bg-indigo-500", "border-indigo-400/40");
+      }
 
       document.getElementById("kpiFilesCount").textContent = "3 Files";
       document.getElementById("kpiFilesCount").classList.replace("text-emerald-400", "text-white");
@@ -893,31 +895,27 @@
       document.getElementById("kpiStaleStatus").className = "text-xs text-rose-400 font-mono";
 
       const gateCard = document.getElementById("gateCard");
-      gateCard.className = "bg-surface rounded-lg p-3.5 border border-rose-900/40 bg-gradient-to-br from-rose-950/15 via-surface to-surface hover:border-rose-700/50 transition-colors shadow-surface-drop group";
+      gateCard.className = "bg-surface rounded-lg p-3.5 border border-rose-900/40 bg-gradient-to-br from-rose-950/15 via-surface to-surface hover:border-rose-700/50 transition-colors shadow-surface-drop group flex flex-col justify-between";
 
       const gateBadge = document.getElementById("gateBadge");
-      gateBadge.className = "px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1";
-      gateBadge.innerHTML = `<svg class="w-3 h-3 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> LOCKED`;
+      gateBadge.className = "px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1";
+      gateBadge.innerHTML = `<svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> LOCKED`;
 
       const gateText = document.getElementById("gateText");
-      gateText.className = "font-mono text-lg font-bold text-rose-400 tracking-tight flex items-center gap-2";
+      gateText.className = "font-mono text-xl font-bold text-rose-400 tracking-tight flex items-center gap-2";
       gateText.textContent = "CI / PR BLOCKED";
 
       const gateDesc = document.getElementById("gateDescription");
-      gateDesc.textContent = "Cannot merge with stale agent context";
-      document.getElementById("gateDot").className = "text-rose-400";
+      gateDesc.textContent = "Cannot merge with stale context";
+      document.getElementById("gateDot").className = "text-rose-400 mr-1";
 
       ["badge-test-users", "badge-readme", "badge-agent"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-          el.className = "badge-status px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30";
+          el.className = "badge-status px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30";
           el.textContent = "STALE";
         }
       });
-
-      document.getElementById("tabPatchCount").className = "px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
-
-      document.getElementById("primaryCtaText").textContent = "Run Auto-Remediation & Verify Sync";
     }
 
     function toggleSimulatedState() {
