@@ -49,6 +49,10 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console(force_terminal=True)
+# Diagnostics must never share stdout with machine-readable `--json` output.
+err_console = Console(stderr=True, force_terminal=True)
+
+JSON_SCHEMA_VERSION = "1.0"
 
 # ---------------------------------------------------------------------------
 # Rich rendering helpers
@@ -189,10 +193,32 @@ def _render_remediation_brief(result: BlastRadiusResult) -> None:
     ))
 
 
-def _render_json(result: BlastRadiusResult) -> None:
-    """Output the audit result as structured JSON."""
+def _build_json_payload(
+    result: BlastRadiusResult,
+    *,
+    ci_enabled: bool,
+    gate_blocked: bool,
+    blocking_reasons: list[str],
+    remaining_impacted_files: int,
+) -> dict:
+    """Build the stable machine-readable audit result.
+
+    Field names mirror ``/api/custom-audit`` and the existing ``--json``
+    shape so consumers do not need a second vocabulary. The ``ci`` block is
+    always present: ``status`` is one of ``not_run``, ``passed`` or
+    ``blocked`` and ``exit_code`` is the process status the gate will use.
+    """
     report = result.drift_report
-    output = {
+
+    if not ci_enabled:
+        ci_status = "not_run"
+        ci_exit_code = None
+    else:
+        ci_status = "blocked" if gate_blocked else "passed"
+        ci_exit_code = 1 if gate_blocked else 0
+
+    return {
+        "schema_version": JSON_SCHEMA_VERSION,
         "has_drift": report.has_drift,
         "has_breaking_drift": report.has_breaking_drift,
         "total_drifts": len(report.drifts),
@@ -220,14 +246,27 @@ def _render_json(result: BlastRadiusResult) -> None:
                 for a in result.impacted_artifacts
             ],
         },
+        "ci": {
+            "enabled": ci_enabled,
+            "status": ci_status,
+            "exit_code": ci_exit_code,
+            "blocking_reasons": list(blocking_reasons) if ci_enabled else [],
+            "remaining_impacted_files": remaining_impacted_files,
+        },
     }
-    console.print_json(json.dumps(output, indent=2))
 
 
-def _render_unified_diff(patch) -> None:
+def _render_json(payload: dict) -> None:
+    """Write exactly one JSON document to stdout, without terminal styling."""
+    sys.stdout.write(json.dumps(payload, indent=2) + "\n")
+    sys.stdout.flush()
+
+
+def _render_unified_diff(patch, output_console: Optional[Console] = None) -> None:
     """Render a unified diff panel for a single remediation patch."""
     from driftlock.sync.remediator import RemediationPatch
 
+    out = output_console or console
     fname = Path(patch.file_path).name
     diff_lines = list(difflib.unified_diff(
         patch.original_content.splitlines(keepends=True),
@@ -239,13 +278,13 @@ def _render_unified_diff(patch) -> None:
 
     if diff_lines:
         diff_text = "\n".join(diff_lines)
-        console.print(Panel(
+        out.print(Panel(
             Syntax(diff_text, "diff", theme="monokai", line_numbers=False),
             title=f"[bold yellow]Patch: {escape(fname)}[/bold yellow]",
             border_style="yellow",
             padding=(0, 1),
         ))
-    console.print()
+    out.print()
 
 
 # ---------------------------------------------------------------------------
@@ -267,50 +306,76 @@ def audit(
     head_path = Path(head)
     repo_path = Path(repo)
 
+    # stdout is reserved for exactly one JSON document under --json, so every
+    # human-facing diagnostic goes to stderr in that mode.
+    diagnostics = err_console if output_json else console
+
     if not base_path.is_file():
-        console.print(f"[red]Error: Base file not found: {base}[/red]")
+        diagnostics.print(f"[red]Error: Base file not found: {base}[/red]")
         raise typer.Exit(code=1)
     if not head_path.is_file():
-        console.print(f"[red]Error: Head file not found: {head}[/red]")
+        diagnostics.print(f"[red]Error: Head file not found: {head}[/red]")
         raise typer.Exit(code=1)
     if not repo_path.is_dir():
-        console.print(f"[red]Error: Repository directory not found: {repo}[/red]")
+        diagnostics.print(f"[red]Error: Repository directory not found: {repo}[/red]")
         raise typer.Exit(code=1)
 
     # Parse contracts
-    console.print(f"[dim]Parsing base contract: {base_path}[/dim]")
+    diagnostics.print(f"[dim]Parsing base contract: {base_path}[/dim]")
     base_contract = parse_file(base_path)
-    console.print(f"[dim]Parsing head contract: {head_path}[/dim]")
+    diagnostics.print(f"[dim]Parsing head contract: {head_path}[/dim]")
     head_contract = parse_file(head_path)
 
     # Compute diff
-    console.print("[dim]Computing contract diff...[/dim]")
+    diagnostics.print("[dim]Computing contract diff...[/dim]")
     drift_report = compute_contract_diff(base_contract, head_contract)
 
     # Scan blast radius
-    console.print(f"[dim]Scanning blast radius in: {repo_path.resolve()}[/dim]")
+    diagnostics.print(f"[dim]Scanning blast radius in: {repo_path.resolve()}[/dim]")
     mapper = BlastRadiusMapper(str(repo_path.resolve()))
     result = mapper.scan_blast_radius(drift_report)
 
-    console.print()
+    diagnostics.print()
 
-    if output_json:
-        _render_json(result)
-    else:
+    # Human mode keeps the existing render-before-fix order.
+    if not output_json:
         _render_drift_tree(result)
 
     # --fix: auto-remediate
     remaining_files = result.total_impacted_files
     if fix and result.impacted_artifacts:
-        remaining_files = _run_fix(result, head_contract, repo_path)
+        remaining_files = _run_fix(
+            result,
+            head_contract,
+            repo_path,
+            output_console=err_console if output_json else None,
+        )
 
-    # --ci: gatekeeper mode
+    # --ci: gatekeeper decision, computed before JSON so it can be reported
+    blocking_reasons: list[str] = []
     if ci:
-        impacted_count = remaining_files if fix else result.total_impacted_files
-        if drift_report.has_breaking_drift or impacted_count > 0:
-            console.print("[bold red]CI Gatekeeper: BLOCKED (breaking contract drift or stale artifacts detected).[/bold red]")
+        if drift_report.has_breaking_drift:
+            blocking_reasons.append("breaking_contract_drift")
+        if remaining_files > 0:
+            blocking_reasons.append("stale_artifacts")
+    gate_blocked = bool(blocking_reasons)
+
+    if output_json:
+        _render_json(_build_json_payload(
+            result,
+            ci_enabled=ci,
+            gate_blocked=gate_blocked,
+            blocking_reasons=blocking_reasons,
+            remaining_impacted_files=remaining_files,
+        ))
+
+    # --ci: gatekeeper mode (exit-code semantics unchanged)
+    if ci:
+        gate_console = err_console if output_json else console
+        if gate_blocked:
+            gate_console.print("[bold red]CI Gatekeeper: BLOCKED (breaking contract drift or stale artifacts detected).[/bold red]")
             raise typer.Exit(code=1)
-        console.print("[bold green]CI Gatekeeper: PASSED (repository contracts and artifacts verified in sync).[/bold green]")
+        gate_console.print("[bold green]CI Gatekeeper: PASSED (repository contracts and artifacts verified in sync).[/bold green]")
         raise typer.Exit(code=0)
 
 
@@ -374,45 +439,47 @@ def _run_fix(
     result: BlastRadiusResult,
     head_contract,
     repo_path: Path,
+    output_console: Optional[Console] = None,
 ) -> int:
     """Execute auto-remediation on the actual repo (for ``audit --fix``)."""
     from driftlock.sync.remediator import DriftRemediator
 
-    console.print()
-    console.print("[bold blue]Running DriftLock Auto-Remediation...[/bold blue]")
-    console.print()
+    out = output_console or console
+    out.print()
+    out.print("[bold blue]Running DriftLock Auto-Remediation...[/bold blue]")
+    out.print()
 
     remediator = DriftRemediator(use_api=None)
     rem_result = remediator.remediate(result, head_contract)
 
     if rem_result.files_patched == 0:
-        console.print("[yellow]No patches could be generated.[/yellow]")
+        out.print("[yellow]No patches could be generated.[/yellow]")
         return result.total_impacted_files
 
     # Show diffs
     for patch in rem_result.patches:
-        _render_unified_diff(patch)
+        _render_unified_diff(patch, output_console=out)
 
     # Apply patches
     written = remediator.apply_patches(rem_result)
-    console.print(f"[dim]Wrote {written} patched file(s) to disk.[/dim]")
+    out.print(f"[dim]Wrote {written} patched file(s) to disk.[/dim]")
 
     # Re-scan to verify
     mapper = BlastRadiusMapper(str(repo_path.resolve()))
     new_result = mapper.scan_blast_radius(result.drift_report)
     remaining = new_result.total_impacted_files
 
-    console.print()
+    out.print()
     if remaining == 0:
         total = rem_result.files_patched
-        console.print(Panel(
+        out.print(Panel(
             f"[bold green]REPOSITORY SYNCHRONIZED -- "
             f"0 Stale Artifacts Remaining ({total}/{total} Fixed)[/bold green]",
             border_style="green",
             padding=(1, 2),
         ))
     else:
-        console.print(Panel(
+        out.print(Panel(
             f"[bold yellow]Partial Remediation -- "
             f"{remaining} Stale Artifact(s) Remaining[/bold yellow]",
             border_style="yellow",

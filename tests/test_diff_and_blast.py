@@ -347,3 +347,119 @@ class TestCLIDemo:
         assert result.exit_code == 0
         assert "CI Gatekeeper" in result.output
 
+
+
+# ---------------------------------------------------------------------------
+# Tests: machine-readable --json contract (regression coverage)
+# ---------------------------------------------------------------------------
+
+class TestCLIJsonContract:
+    """`--json` must emit exactly one JSON document on stdout.
+
+    The CI gate message and progress diagnostics belong on stderr so that
+    piping stdout into `jq` keeps working in both normal and CI mode.
+    """
+
+    @staticmethod
+    def _demo_paths():
+        project_root = Path(__file__).resolve().parent.parent
+        demo_dir = project_root / "fixtures" / "demo_repo"
+        return demo_dir, demo_dir / "api_base.py", demo_dir / "api_head.py"
+
+    def test_audit_json_ci_drift_emits_single_document_and_blocks(self):
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        demo_dir, base_file, head_file = self._demo_paths()
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(base_file),
+            "--head", str(head_file),
+            "--repo", str(demo_dir),
+            "--json",
+            "--ci",
+        ])
+
+        assert result.exit_code == 1
+        data = json.loads(result.stdout)  # rejects any trailing non-JSON text
+        assert data["schema_version"]
+        assert data["has_drift"] is True
+        assert data["has_breaking_drift"] is True
+        assert data["total_drifts"] == 4
+        assert data["breaking_drifts"] == 3
+        assert data["non_breaking_drifts"] == 1
+        assert data["blast_radius"]["total_impacted_files"] == 3
+        assert {a["artifact_type"] for a in data["blast_radius"]["impacted_artifacts"]} == {
+            "TEST",
+            "DOCUMENTATION",
+            "AGENT_MEMORY",
+        }
+        assert data["ci"] == {
+            "enabled": True,
+            "status": "blocked",
+            "exit_code": 1,
+            "blocking_reasons": ["breaking_contract_drift", "stale_artifacts"],
+            "remaining_impacted_files": 3,
+        }
+        assert "CI Gatekeeper: BLOCKED" in result.stderr
+        assert "CI Gatekeeper" not in result.stdout
+
+    def test_audit_json_ci_clean_emits_single_document_and_passes(self):
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        demo_dir, _, head_file = self._demo_paths()
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(head_file),
+            "--head", str(head_file),
+            "--repo", str(demo_dir),
+            "--json",
+            "--ci",
+        ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["has_drift"] is False
+        assert data["has_breaking_drift"] is False
+        assert data["total_drifts"] == 0
+        assert data["drifts"] == []
+        assert data["blast_radius"]["total_impacted_files"] == 0
+        assert data["blast_radius"]["impacted_artifacts"] == []
+        assert data["ci"] == {
+            "enabled": True,
+            "status": "passed",
+            "exit_code": 0,
+            "blocking_reasons": [],
+            "remaining_impacted_files": 0,
+        }
+        assert "CI Gatekeeper: PASSED" in result.stderr
+
+    def test_audit_json_without_ci_reports_not_run(self):
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        demo_dir, base_file, head_file = self._demo_paths()
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(base_file),
+            "--head", str(head_file),
+            "--repo", str(demo_dir),
+            "--json",
+        ])
+
+        # Drift exists, but without --ci the process still exits 0.
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["has_drift"] is True
+        assert data["ci"]["enabled"] is False
+        assert data["ci"]["status"] == "not_run"
+        assert data["ci"]["exit_code"] is None
+        assert "CI Gatekeeper" not in result.stdout
+        assert "CI Gatekeeper" not in result.stderr
