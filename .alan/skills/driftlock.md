@@ -16,6 +16,18 @@ Activate this skill when:
 
 ---
 
+## Tool Preference (MCP first)
+
+When the DriftLock MCP server is connected, prefer its tools over shell commands. They reuse the same deterministic engine and JSON contract:
+
+- `driftlock_audit` — read-only audit; pass `ci=true` for gate semantics.
+- `driftlock_demo` — fixture-only demonstration; never describe it as a production audit.
+- `driftlock_apply_fix` — **mutates files**; requires `authorize=true` and explicit user approval. Report the returned diffs and verification status.
+
+Transport is stdio and the server requires `DRIFTLOCK_MCP_WORKSPACE` set to the absolute project root. If the tools are unavailable, use the CLI workflow below unchanged.
+
+---
+
 ## Autonomous Agent Workflow
 
 ### Step 1: Execute the AST Audit

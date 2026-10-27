@@ -9,7 +9,17 @@ DriftLock is a deterministic AST drift and contract consistency engine. Use this
 - When agent context files (`AGENT_CONTEXT.md`, `CLAUDE.md`) may be stale
 - In CI pipelines to block merges on breaking drift
 
-## Quick Commands
+## Preferred: MCP Tools
+
+When the DriftLock MCP server is connected, call these tools instead of shelling out. They return the same versioned JSON report and keep stdout machine-readable.
+
+- `driftlock_audit(repository_root, base_contract, head_contract, ci=false)` — read-only audit; `ci=true` maps to the gate exit code.
+- `driftlock_demo()` — bundled fixture demonstration, labeled `fixture_demo` and **not** a production audit.
+- `driftlock_apply_fix(repository_root, base_contract, head_contract, authorize=true)` — **modifies files**; use only with explicit user approval, then report the returned diffs and verification.
+
+The server is stdio-only and requires `DRIFTLOCK_MCP_WORKSPACE` to be set to the project root. If the tools are unavailable, use the CLI fallback below.
+
+## CLI Fallback
 
 ### 1. Run the Built-in Demo
 ```bash
