@@ -5,7 +5,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Control%20Plane-driftlock--xicn.onrender.com-6366f1?style=for-the-badge&logo=render&logoColor=white)](https://driftlock-xicn.onrender.com/)
 [![CI Gatekeeper](https://img.shields.io/github/actions/workflow/status/Jishnu1618/Driftlock/driftlock-ci.yml?branch=main&label=CI%20Gatekeeper&style=for-the-badge)](https://github.com/Jishnu1618/Driftlock/actions/workflows/driftlock-ci.yml)
-[![Tests Passing](https://img.shields.io/badge/tests-56%20passed%20%C2%B7%20100%25-10B981?style=for-the-badge)](tests/)
+[![Tests Passing](https://img.shields.io/badge/tests-57%20passed%20%C2%B7%20100%25-10B981?style=for-the-badge)](tests/)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=for-the-badge)](https://www.python.org/)
 [![Alan AI Skill](https://img.shields.io/badge/Alan%20AI%20Skill-%2Fdriftlock-purple?style=for-the-badge)](.alan/skills/driftlock.md)
 

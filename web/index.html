@@ -562,8 +562,8 @@
                 <h3 class="text-xs font-semibold text-white font-mono uppercase tracking-wide">Interactive AST Code Sandbox</h3>
                 <p class="text-[11px] text-slate-400 font-sans mt-0.5">Test custom Python schemas or routes against DriftLock's parser in real-time.</p>
               </div>
-              <button onclick="runCustomAudit()" class="px-3 py-1.5 text-xs font-mono text-white bg-indigo-600 hover:bg-indigo-500 rounded border border-indigo-400/40 shadow-glow-indigo flex items-center gap-1.5 transition-colors">
-                <span>⚡ Run AST Audit</span>
+              <button id="btnRunCustomAudit" onclick="runCustomAudit()" class="px-3 py-1.5 text-xs font-mono text-white bg-indigo-600 hover:bg-indigo-500 rounded border border-indigo-400/40 shadow-glow-indigo flex items-center gap-1.5 transition-colors">
+                <span id="btnRunCustomAuditText">⚡ Run AST Audit</span>
               </button>
             </div>
 
@@ -981,6 +981,11 @@
       const baseCode = document.getElementById("customBaseCode").value;
       const headCode = document.getElementById("customHeadCode").value;
       const resBox = document.getElementById("customAuditResults");
+      const btn = document.getElementById("btnRunCustomAudit");
+      const btnText = document.getElementById("btnRunCustomAuditText");
+
+      if (btn) btn.classList.add("opacity-75", "cursor-wait");
+      if (btnText) btnText.textContent = "⚡ Running Audit...";
 
       try {
         const res = await fetch("/api/custom-audit", {
@@ -988,32 +993,65 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ base_code: baseCode, head_code: headCode })
         });
+        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Server error: " + res.statusText);
+        }
+
         const data = await res.json();
         resBox.classList.remove("hidden");
 
         if (!data.has_drift) {
-          resBox.innerHTML = `<span class="text-emerald-400 font-semibold">✓ No contract drift detected. Contracts are 100% identical.</span>`;
+          resBox.innerHTML = `
+            <div class="p-3 rounded-md bg-emerald-950/30 border border-emerald-500/40 text-emerald-400 font-mono text-xs flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="font-bold">✓ Zero Contract Drift Detected.</span>
+              <span class="text-slate-300">Base and Head contracts are 100% synchronized (${data.base_schemas ? data.base_schemas.length : 0} schemas, ${data.base_routes ? data.base_routes.length : 0} routes).</span>
+            </div>
+          `;
         } else {
           let rows = data.drifts.map(d => `
-            <div class="flex items-center justify-between py-1 border-b border-border/60">
-              <span class="font-bold ${d.is_breaking ? 'text-rose-400' : 'text-amber-400'}">${d.category}</span>
-              <span class="text-slate-200">${d.identifier}</span>
-              <span class="px-1.5 py-0.2 rounded text-[10px] ${d.is_breaking ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}">
-                ${d.is_breaking ? 'BREAKING' : 'SAFE'}
-              </span>
+            <div class="py-2 border-b border-border/60 last:border-0">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ${d.is_breaking ? 'text-rose-400' : 'text-amber-400'} font-mono text-xs">${escapeHtml(d.category)}</span>
+                <span class="font-mono text-slate-200 text-xs">${escapeHtml(d.identifier)}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${d.is_breaking ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                  ${d.is_breaking ? 'BREAKING' : 'COMPATIBLE'}
+                </span>
+              </div>
+              <div class="text-[11px] text-slate-400 pt-1 font-mono">${escapeHtml(d.details)}</div>
             </div>
-            <div class="text-[11px] text-slate-400 pl-2 pb-1">${d.details}</div>
           `).join("");
 
           resBox.innerHTML = `
-            <div class="text-xs font-bold text-white mb-2">Audit Results: ${data.total_drifts} Drifts Detected (${data.breaking_count} Breaking)</div>
-            ${rows}
+            <div class="p-3 rounded-md bg-surface border border-indigo-500/40 space-y-2">
+              <div class="flex items-center justify-between pb-1.5 border-b border-border">
+                <span class="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                  AST Audit Results: ${data.total_drifts} Contract Drift(s) Found
+                </span>
+                <span class="text-xs font-mono text-rose-400 font-semibold">${data.breaking_count} Breaking</span>
+              </div>
+              <div class="space-y-1 divide-y divide-border/40">
+                ${rows}
+              </div>
+            </div>
           `;
         }
-        showToast("AST Audit Complete!");
+        showToast("AST Audit Complete: " + data.total_drifts + " drift(s) found");
+        resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
       } catch (err) {
         resBox.classList.remove("hidden");
-        resBox.innerHTML = `<span class="text-rose-400">Error running audit: ${err.message}</span>`;
+        resBox.innerHTML = `
+          <div class="p-3 rounded-md bg-rose-950/40 border border-rose-500/40 text-xs font-mono text-rose-300">
+            <span class="font-bold">Audit Error:</span> ${escapeHtml(err.message)}
+          </div>
+        `;
+        showToast("Audit failed: " + err.message);
+      } finally {
+        if (btn) btn.classList.remove("opacity-75", "cursor-wait");
+        if (btnText) btnText.textContent = "⚡ Run AST Audit";
       }
     }
 

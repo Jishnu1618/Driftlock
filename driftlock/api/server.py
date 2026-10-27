@@ -272,8 +272,8 @@ async def custom_ast_audit(req: CustomAuditRequest):
                 {"name": s.name, "fields": [{"name": f.name, "type": f.type_annotation, "required": f.is_required, "default": f.default_value} for f in s.fields]}
                 for s in head_contract.schemas
             ],
-            "base_routes": [{"method": r.method, "path": r.path, "function": r.function_name} for r in base_contract.routes],
-            "head_routes": [{"method": r.method, "path": r.path, "function": r.function_name} for r in head_contract.routes],
+            "base_routes": [{"method": (r.http_methods[0] if r.http_methods else "ANY"), "path": r.path, "function": r.function_name} for r in base_contract.routes],
+            "head_routes": [{"method": (r.http_methods[0] if r.http_methods else "ANY"), "path": r.path, "function": r.function_name} for r in head_contract.routes],
         }
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"AST Parsing error: {str(exc)}")

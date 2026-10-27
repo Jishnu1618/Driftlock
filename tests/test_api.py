@@ -62,6 +62,45 @@ class User(BaseModel):
     assert data["drifts"][0]["is_breaking"] is True
 
 
+def test_api_custom_audit_with_routes():
+    base_code = """
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Item(BaseModel):
+    title: str
+
+@app.get("/items")
+def get_items():
+    return []
+"""
+    head_code = """
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Item(BaseModel):
+    title: str
+    price: float
+
+@app.get("/items")
+def get_items():
+    return []
+"""
+    res = client.post("/api/custom-audit", json={"base_code": base_code, "head_code": head_code})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert data["has_drift"] is True
+    assert len(data["base_routes"]) == 1
+    assert data["base_routes"][0]["method"] == "GET"
+    assert data["base_routes"][0]["path"] == "/items"
+
+
+
 def test_serve_index():
     res = client.get("/")
     assert res.status_code == 200
