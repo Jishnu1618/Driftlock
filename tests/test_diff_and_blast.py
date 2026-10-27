@@ -305,3 +305,45 @@ class TestCLIDemo:
         assert result.exit_code == 0, f"Audit --json failed:\n{result.output}"
         # The output may have Rich formatting; find the JSON portion
         assert "has_drift" in result.output
+
+    def test_audit_command_ci_flag_drift_detected_fails(self):
+        """The audit command with --ci should exit with code 1 when breaking drift/impacted artifacts exist."""
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        project_root = Path(__file__).resolve().parent.parent
+        demo_dir = project_root / "fixtures" / "demo_repo"
+        base_file = demo_dir / "api_base.py"
+        head_file = demo_dir / "api_head.py"
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(base_file),
+            "--head", str(head_file),
+            "--repo", str(demo_dir),
+            "--ci",
+        ])
+        assert result.exit_code == 1
+        assert "CI Gatekeeper" in result.output
+
+    def test_audit_command_ci_flag_clean_contract_passes(self):
+        """The audit command with --ci should exit with code 0 when contracts are identical and in sync."""
+        from typer.testing import CliRunner
+        from driftlock.cli.main import app
+
+        project_root = Path(__file__).resolve().parent.parent
+        demo_dir = project_root / "fixtures" / "demo_repo"
+        head_file = demo_dir / "api_head.py"
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "audit",
+            "--base", str(head_file),
+            "--head", str(head_file),
+            "--repo", str(demo_dir),
+            "--ci",
+        ])
+        assert result.exit_code == 0
+        assert "CI Gatekeeper" in result.output
+

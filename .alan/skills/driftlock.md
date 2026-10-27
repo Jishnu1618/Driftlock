@@ -2,19 +2,25 @@
 
 ## Skill Description
 
-The `/driftlock` skill enables Alan's coding agent to detect and remediate contract drift between API schemas, test suites, documentation, and agent memory files. It runs DriftLock's deterministic AST parser and blast radius mapper to identify stale references, then either auto-patches them or generates a remediation brief.
+The `/driftlock` skill empowers Alan AI coding agents to detect and deterministically remediate contract drift between backend API schemas (Pydantic, FastAPI, Flask), test suites (`[TEST]`), documentation (`[DOCS]`), and AI agent context/memory files (`[AGENT_MEMORY]`). 
 
-## Trigger
+It invokes DriftLock's zero-execution AST parser and multi-artifact Blast Radius mapper to pinpoint stale references, and applies closed-loop automated patching via `--fix` to eliminate agent hallucinations and CI breakages.
+
+## Trigger Conditions
 
 Activate this skill when:
-- A Pydantic model or FastAPI/Flask route has been modified
-- You need to verify consistency between API contracts, tests, docs, and agent context
-- A PR review shows schema changes that may have downstream stale references
-- The user says "check for drift", "run driftlock", or "audit contracts"
+- An API schema (`BaseModel`) or route signature has been added, modified, or removed.
+- A pull request review touches backend schemas and requires downstream verification.
+- You need to guarantee that `AGENT_CONTEXT.md` / `CLAUDE.md` reflect current contracts before generating new features.
+- The user prompts: "check for drift", "audit contracts", "fix drift", or "/driftlock".
 
-## Workflow
+---
 
-### Step 1: Run the audit
+## Autonomous Agent Workflow
+
+### Step 1: Execute the AST Audit
+
+Run the DriftLock CLI against the base and head contract files:
 
 ```bash
 python -m driftlock.cli.main audit \
@@ -23,83 +29,72 @@ python -m driftlock.cli.main audit \
   --repo <repository_root>
 ```
 
-If no specific files are given, use the demo:
-
+For quick verification on built-in fixtures:
 ```bash
 python -m driftlock.cli.main demo
 ```
 
-### Step 2: Read the Remediation Brief
+### Step 2: Inspect Blast Radius by Artifact Category
 
-The CLI outputs a structured **Remediation Brief** listing:
-- Each detected contract drift (FIELD_ADDED, FIELD_REMOVED, FIELD_TYPE_CHANGED, ROUTE_ADDED, ROUTE_REMOVED)
-- Whether each drift is BREAKING or NON-BREAKING
-- Every impacted file with its artifact type (TEST, DOCUMENTATION, AGENT_MEMORY)
-- A specific suggested action for each impacted file
+DriftLock groups impacted artifacts into three distinct blast radius categories:
 
-### Step 3: Patch the impacted files
+1. **`[TEST]` Artifacts (`tests/test_*.py`)**
+   - **Risk:** Stale test payloads missing newly required fields or missing assertions on new endpoints.
+   - **Agent Action:** Inject missing required attributes into fixture dictionaries, request payloads, and add assertion checks.
 
-For each stale file listed in the Remediation Brief:
+2. **`[DOCS]` Artifacts (`README.md`, `docs/*.md`)**
+   - **Risk:** Outdated markdown schema tables, stale curl/JSON examples, desynchronized endpoint paths.
+   - **Agent Action:** Update markdown attribute tables, JSON examples, and endpoint documentation.
 
-**TEST files** (`test_*.py`):
-1. Add the missing field to test payload dictionaries
-2. Add assertions verifying the new field is present
-3. Update `expected_fields` lists
+3. **`[AGENT_MEMORY]` Artifacts (`AGENT_CONTEXT.md`, `CLAUDE.md`, `.cursorrules`)**
+   - **Risk:** **Agent Amnesia** — Downstream coding agents read outdated memory files and continuously generate deprecated payload structures.
+   - **Agent Action:** Update system prompt constraints, schema specification tables, and validation instructions so all future agent iterations operate on the truth.
 
-**DOCUMENTATION files** (`README.md`, `*.md`):
-1. Add the new field to markdown schema tables
-2. Update JSON examples with the new field
-3. Add the field to any bullet-point API descriptions
+### Step 3: Run Closed-Loop Auto-Remediation (`--fix`)
 
-**AGENT_MEMORY files** (`AGENT_CONTEXT.md`, `CLAUDE.md`):
-1. Add the new field to schema definition tables
-2. Update API contract bullet lists
-3. Update validation instructions
-
-### Step 4: Auto-fix and verify
-
-Run the auto-remediation to patch all files and verify zero remaining drift:
+DriftLock can automatically patch all stale artifacts across the blast radius:
 
 ```bash
+# Auto-patch files in a real repository and verify 0 drift remaining:
+python -m driftlock.cli.main audit \
+  --base <path_to_base_contract.py> \
+  --head <path_to_head_contract.py> \
+  --repo <repository_root> \
+  --fix
+```
+
+```bash
+# Verify the remediation workflow safely in a sandboxed temp environment:
 python -m driftlock.cli.main demo --fix
 ```
 
-Or for a real audit:
+When `--fix` executes:
+1. It analyzes contract changes and generates unified diffs for every impacted file.
+2. It writes deterministic updates to test dictionaries, markdown tables, and agent rules.
+3. It performs an immediate re-audit of the repository.
+4. It reports `✓ REPOSITORY SYNCHRONIZED — 0 Stale Artifacts Remaining (N/N Fixed)`.
+
+### Step 4: CI Gatekeeper Integration (`--ci`)
+
+When integrating DriftLock into CI/CD pipelines or pre-commit hooks, pass `--ci`:
 
 ```bash
 python -m driftlock.cli.main audit \
-  --base <base.py> --head <head.py> \
-  --repo <repo_root> --fix
+  --base main_contract.py \
+  --head pr_contract.py \
+  --repo . \
+  --ci
 ```
 
-The `--fix` flag will:
-1. Display the initial drift audit (RED status)
-2. Auto-patch all stale files
-3. Show unified diffs of all changes
-4. Re-scan and verify synchronization
-5. Print GREEN status if all stale artifacts are fixed
+- **Exit Code `0`:** Contracts are in sync and 0 stale artifacts exist.
+- **Exit Code `1`:** Breaking contract drift or stale artifacts detected (blocks PR merge).
 
-### Step 5: Verify with tests
+### Step 5: Verify Suite and Commit
+
+After applying `--fix`, verify no regressions:
 
 ```bash
 pytest tests/ -v
-```
-
-Ensure all tests pass after remediation.
-
-### Step 6: Commit the synchronized files
-
-```bash
 git add -A
-git commit -m "fix: synchronize tests, docs, and agent context with updated API contract"
+git commit -m "fix(contract): synchronize tests, documentation, and agent memory via DriftLock"
 ```
-
-## JSON Output for Pipelines
-
-For CI/CD integration, use `--json`:
-
-```bash
-python -m driftlock.cli.main audit --base old.py --head new.py --repo . --json
-```
-
-This outputs structured JSON with `has_drift`, `breaking_drifts`, `blast_radius`, and `impacted_artifacts` suitable for automated pipeline gates.

@@ -1,51 +1,45 @@
 # DriftLock Skill
 
-DriftLock is an autonomous AST drift and contract consistency engine. Use this skill to detect and remediate contract drift between API schemas, tests, documentation, and AI agent memory files.
+DriftLock is a deterministic AST drift and contract consistency engine. Use this skill to detect and remediate contract drift between API schemas, tests (`[TEST]`), documentation (`[DOCS]`), and AI agent memory (`[AGENT_MEMORY]`).
 
 ## When to Use
 
 - After modifying a Pydantic schema or FastAPI/Flask route
-- Before committing changes that touch API contracts
-- When reviewing PRs that may have introduced breaking schema changes
+- Before committing changes that touch API contracts or submitting PRs
 - When agent context files (`AGENT_CONTEXT.md`, `CLAUDE.md`) may be stale
+- In CI pipelines to block merges on breaking drift
 
 ## Quick Commands
 
-### Audit two contract versions
-
-```bash
-python -m driftlock.cli.main audit --base path/to/old_api.py --head path/to/new_api.py --repo .
-```
-
-### Run the built-in demo
-
+### 1. Run the Built-in Demo
 ```bash
 python -m driftlock.cli.main demo
 ```
 
-### Auto-remediate stale files
-
+### 2. Auto-Remediate Stale Files
 ```bash
 python -m driftlock.cli.main demo --fix
 ```
 
-### Get JSON output for CI/CD pipelines
-
+### 3. Audit Specific Base and Head Contracts
 ```bash
-python -m driftlock.cli.main audit --base old.py --head new.py --repo . --json
+python -m driftlock.cli.main audit --base path/to/base.py --head path/to/head.py --repo .
+```
+
+### 4. CI Gatekeeper Check
+```bash
+python -m driftlock.cli.main audit --base base.py --head head.py --repo . --ci
+```
+*Exits with code 1 if breaking drift or stale artifacts exist; exits with code 0 if fully synchronized.*
+
+### 5. Structured JSON Output
+```bash
+python -m driftlock.cli.main audit --base base.py --head head.py --repo . --json
 ```
 
 ## How It Works
 
-1. **Parse** — DriftLock uses Python's native `ast` module (zero-LLM) to extract routes and Pydantic schemas from both the base and head contract files.
-2. **Diff** — Deterministically compares both snapshots to classify drifts as `FIELD_ADDED`, `FIELD_REMOVED`, `FIELD_TYPE_CHANGED`, `ROUTE_ADDED`, `ROUTE_REMOVED`, etc., with breaking vs. non-breaking classification.
-3. **Blast Radius** — Walks the repository to find `TEST`, `DOCUMENTATION`, and `AGENT_MEMORY` files that reference drifted schemas but are missing the updated fields.
-4. **Remediation Brief** — Generates structured, actionable remediation instructions.
-5. **Auto-Fix** — With `--fix`, patches stale files deterministically (or via Open Model API if a key is set) and verifies zero remaining drift.
-
-## Interpreting Results
-
-- **BREAKING** drifts (red) require immediate action — they will cause runtime failures for API consumers.
-- **NON-BREAKING** drifts (yellow) are safe but should still be documented.
-- The **Blast Radius Tree** shows exactly which test files, docs, and agent context files need updating.
-- The **Remediation Brief** can be fed directly to an AI coding agent for automated patching.
+1. **Deterministic AST Parser**: Uses Python's native `ast` module (zero-LLM, zero code execution) to extract routes and Pydantic schemas.
+2. **Contract Diff Engine**: Classifies differences into breaking (`FIELD_ADDED` without default, `FIELD_REMOVED`, `FIELD_TYPE_CHANGED`, `ROUTE_REMOVED`) and non-breaking (`FIELD_ADDED` with default, `ROUTE_ADDED`).
+3. **Multi-Artifact Blast Radius**: Traverses repository files to detect stale references across `[TEST]`, `[DOCS]`, and `[AGENT_MEMORY]`.
+4. **Closed-Loop Remediation**: With `--fix`, deterministically patches stale files in an isolated temp workspace, re-verifies 0 remaining drift, and writes verified patches.

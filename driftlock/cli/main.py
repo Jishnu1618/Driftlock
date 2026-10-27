@@ -260,6 +260,7 @@ def audit(
     repo: str = typer.Option(".", "--repo", "-r", help="Repository root directory to scan for blast radius."),
     output_json: bool = typer.Option(False, "--json", "-j", help="Output results as structured JSON."),
     fix: bool = typer.Option(False, "--fix", "-f", help="Auto-remediate stale files and verify sync."),
+    ci: bool = typer.Option(False, "--ci", help="CI gatekeeper mode: exit 1 if breaking drift or impacted artifacts detected."),
 ) -> None:
     """Compare base and head contract files, compute drift, and scan blast radius."""
     base_path = Path(base)
@@ -299,8 +300,18 @@ def audit(
         _render_drift_tree(result)
 
     # --fix: auto-remediate
+    remaining_files = result.total_impacted_files
     if fix and result.impacted_artifacts:
-        _run_fix(result, head_contract, repo_path)
+        remaining_files = _run_fix(result, head_contract, repo_path)
+
+    # --ci: gatekeeper mode
+    if ci:
+        impacted_count = remaining_files if fix else result.total_impacted_files
+        if drift_report.has_breaking_drift or impacted_count > 0:
+            console.print("[bold red]CI Gatekeeper: BLOCKED (breaking contract drift or stale artifacts detected).[/bold red]")
+            raise typer.Exit(code=1)
+        console.print("[bold green]CI Gatekeeper: PASSED (repository contracts and artifacts verified in sync).[/bold green]")
+        raise typer.Exit(code=0)
 
 
 @app.command()
@@ -363,7 +374,7 @@ def _run_fix(
     result: BlastRadiusResult,
     head_contract,
     repo_path: Path,
-) -> None:
+) -> int:
     """Execute auto-remediation on the actual repo (for ``audit --fix``)."""
     from driftlock.sync.remediator import DriftRemediator
 
@@ -376,7 +387,7 @@ def _run_fix(
 
     if rem_result.files_patched == 0:
         console.print("[yellow]No patches could be generated.[/yellow]")
-        return
+        return result.total_impacted_files
 
     # Show diffs
     for patch in rem_result.patches:
@@ -407,6 +418,7 @@ def _run_fix(
             border_style="yellow",
             padding=(1, 2),
         ))
+    return remaining
 
 
 def _run_demo_fix(
