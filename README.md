@@ -15,6 +15,9 @@
 > **Dashboard URL:** [**https://driftlock-xicn.onrender.com/**](https://driftlock-xicn.onrender.com/)  
 > *Experience the dark-mode developer control plane, interactive blast radius dependency tree, and 1-click closed-loop contract remediation live in your browser.*
 
+
+>Live Demo Video:
+> **Demo Video link : [**https://drive.google.com/file/d/1fBubh8HIkm--JK1NpoA-Aiuzany-wwLo/view?usp=sharing**]
 ---
 
 ## ⚡ The Problem: Agent Amnesia & Silent Contract Drift
